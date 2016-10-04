@@ -10,11 +10,19 @@
   </file>
   <file>
     <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/app.php</name>
-    <hash>d4b89461e7e66ab348f6e6e757b131f8994438e8</hash>
+    <hash>0b894fbbd417b348a66c856613fa2a516bc153fb</hash>
   </file>
   <file>
     <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/README.md</name>
     <hash>ca335fccf1060b1ff8de2284dd016fd75151d28b</hash>
+  </file>
+  <file>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/tests</name>
+    <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
+  </file>
+  <file>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/classes</name>
+    <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <file>
     <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/.git</name>
@@ -33,9 +41,21 @@
     <signature>53c84e4cc7f4ce458beb0a0f301e669cfbcda139</signature>
   </action>
   <action>
+    <hook>load_loaders</hook>
+    <function>AntAuthenticatorAutoLoader</function>
+    <priority>50</priority>
+    <signature>3628ad7dfd694b169cca5774adc77ddb65cc185b</signature>
+  </action>
+  <action>
     <hook>cli-command</hook>
     <function>processCommand</function>
     <priority>50</priority>
     <signature>d44f7e3739770a1c297d1468100728eebf94a8da</signature>
+  </action>
+  <action>
+    <hook>auth-user</hook>
+    <function>authenticateUser</function>
+    <priority>50</priority>
+    <signature>5addb331091b80a193911d39bc001610078c0ee1</signature>
   </action>
 </app>

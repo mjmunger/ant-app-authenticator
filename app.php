@@ -6,9 +6,11 @@ namespace PHPAnt\Core;
  * App Name: PHPAnt Authenticator
  * App Description: Handles basic authentication for PHP-Ant apps.
  * App Version: 1.0
- * App Action: cli-load-grammar -> loadAntAuthenticator @ 90
- * App Action: cli-init         -> declareMySelf  @ 50
- * App Action: cli-command      -> processCommand @ 50
+ * App Action: cli-load-grammar -> loadAntAuthenticator       @ 90
+ * App Action: cli-init         -> declareMySelf              @ 50
+ * App Action: load_loaders     -> AntAuthenticatorAutoLoader @ 50
+ * App Action: cli-command      -> processCommand             @ 50
+ * App Action: auth-user        -> authenticateUser           @ 50
  */
 
  /**
@@ -69,6 +71,11 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
     }
 
     public function loadAntAuthenticatorClasses($class) {
+        
+        $buffer = explode('\\', $class);
+        $class = end($buffer);
+        var_dump($class);
+
         $baseDir = $this->path;
 
         $candidate_files = array();
@@ -80,6 +87,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
         foreach($candidate_files as $dependency) {
             if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
+            printf("Looking to load %s",$dependency) . PHP_EOL;
 
             if(file_exists($dependency)) {
                 if(is_readable($dependency)) {
@@ -115,5 +123,52 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         return ['success' => true];
     }
 
+    function authenticateUser($args) {
+
+        //Allow CLI access all the time.
+        if(php_sapi_name() == 'cli') return ['success' => true] ;
+
+        //Get the authorization request object:
+        $options['pdo']         = $args['AE']->Configs->pdo;
+        $options['uri']         = $args['AE']->Configs->Server->Request->uri;
+        $options['get']         = $args['AE']->Configs->Server->Request->get_vars;
+        $options['post']        = $args['AE']->Configs->Server->Request->post_vars;
+        $options['cookies']     = $args['AE']->Configs->Server->Request->cookies;
+        $options['return']      = (null !== $args['AE']->Configs->Server->Request->get_vars['return'] ? $args['AE']->Configs->Server->Request->get_vars['return'] : false);
+
+        $options['credentials'] = array_merge($options['get'], $options['post']);
+
+ 
+        //If we are using API authentication, the key should be in the get request.
+        //If we are using content authentication, the user / pass should be in post vars.
+
+        $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
+        $AuthorizationRequest->authenticate($options);
+
+        //Is we are authorized (by user / pass) and should issue an authorization token (cookie), then...
+        if($AuthorizationRequest->authorized && $AuthorizationRequest->shouldIssueCredentials) {
+            //Store the credentials for the session or for a while.
+            $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage();
+            $CredentialStorage->setRememberMe(isset($args['AE']->Configs->Server->Request->post_vars['remember']));
+            $CredentialStorage->setExpiry($args['AE']->Configs->getConfigs(['credentials-valid-for']));
+            $CredentialStorage->issueCredentials();
+        }
+
+        //Save the current_user in the AppEngine for later use.
+        
+        $current_user = new Users($args['AE']->Configs->pdo);
+        $current_user->users_id = $AuthorizationRequest->users_id;
+        $current_user->load_me();
+
+        if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
+
+        $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter($AuthorizationRequest->authorized, $options['return']);
+        $AuthorizationRouter->route();
+
+        $return['success']      = $AuthorizationRequest->authorized;
+        $return['current_user'] = $current_user;
+
+        return $return;
+    }
 
 }
