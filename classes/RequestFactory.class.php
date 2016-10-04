@@ -6,10 +6,6 @@ class RequestFactory {
 	
 	static function getRequestAuthorization($options) {
 
-		$uri         = $options['uri'];
-		$pdo         = $options['pod'];
-		$credentials = $options['credentials'];
-
         /**
          *  Determine if the request is for an API or content. 
          *  All APIs must have /api/ as the root of the URI. You can have many,
@@ -23,9 +19,10 @@ class RequestFactory {
          **/
 
         $regex = '%^\/api\/.*%';
-        $Request = (preg_match($regex, $uri) > 0 
-                   ? new AuthorizeAPI($pdo, $uri, $credentials)
-                   : new AuthorizePageview($pdo, $uri, $credentials)
+
+        $Request = (preg_match($regex, $options['uri']) > 0 
+                   ? new AuthorizeAPI($options)
+                   : new AuthorizePageview($options)
                    );
 
         return $Request;

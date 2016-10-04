@@ -1,31 +1,31 @@
 <?xml version="1.0"?>
 <app name="AntAuthenticator" namespace="PHPAnt\Core">
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/public.key</name>
-    <hash>fc7da0f6a650d57c6940b402091dbbcd93fc67e1</hash>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/.git</name>
+    <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <file>
     <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/LICENSE</name>
     <hash>4c80553b587d05130abb4998a445245c97e2dce8</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/app.php</name>
-    <hash>0b894fbbd417b348a66c856613fa2a516bc153fb</hash>
-  </file>
-  <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/README.md</name>
-    <hash>ca335fccf1060b1ff8de2284dd016fd75151d28b</hash>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/public.key</name>
+    <hash>fc7da0f6a650d57c6940b402091dbbcd93fc67e1</hash>
   </file>
   <file>
     <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/tests</name>
     <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/classes</name>
-    <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/README.md</name>
+    <hash>ca335fccf1060b1ff8de2284dd016fd75151d28b</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/.git</name>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/app.php</name>
+    <hash>914982c69d93c4c7da617fbb91eb17b3c31887b0</hash>
+  </file>
+  <file>
+    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/classes</name>
     <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <action>

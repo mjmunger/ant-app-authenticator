@@ -74,7 +74,6 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         
         $buffer = explode('\\', $class);
         $class = end($buffer);
-        var_dump($class);
 
         $baseDir = $this->path;
 
@@ -87,7 +86,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
         foreach($candidate_files as $dependency) {
             if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
-            printf("Looking to load %s",$dependency) . PHP_EOL;
+            //printf("Looking to load %s",$dependency) . PHP_EOL;
 
             if(file_exists($dependency)) {
                 if(is_readable($dependency)) {
@@ -127,14 +126,15 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         //Allow CLI access all the time.
         if(php_sapi_name() == 'cli') return ['success' => true] ;
-
         //Get the authorization request object:
         $options['pdo']         = $args['AE']->Configs->pdo;
         $options['uri']         = $args['AE']->Configs->Server->Request->uri;
         $options['get']         = $args['AE']->Configs->Server->Request->get_vars;
         $options['post']        = $args['AE']->Configs->Server->Request->post_vars;
         $options['cookies']     = $args['AE']->Configs->Server->Request->cookies;
-        $options['return']      = (null !== $args['AE']->Configs->Server->Request->get_vars['return'] ? $args['AE']->Configs->Server->Request->get_vars['return'] : false);
+
+        $options['return']      = false;
+        if(isset($args['AE']->Configs->Server->Request->get_vars['return'])) $options['return'] = $args['AE']->Configs->Server->Request->get_vars['return'];
 
         $options['credentials'] = array_merge($options['get'], $options['post']);
 
@@ -156,19 +156,25 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         //Save the current_user in the AppEngine for later use.
         
-        $current_user = new Users($args['AE']->Configs->pdo);
-        $current_user->users_id = $AuthorizationRequest->users_id;
-        $current_user->load_me();
+        if($AuthorizationRequest->authorized) {
+            $current_user = new Users($args['AE']->Configs->pdo);
+            $current_user->users_id = $AuthorizationRequest->users_id;
+            $current_user->load_me();
+    
+            $return['current_user'] = $current_user;
 
-        if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
+            if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
+        }
 
-        $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter($AuthorizationRequest->authorized, $options['return']);
+        $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
+                                                                              , $options['return']                         // If a return url is specified, submit that.
+                                                                              , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
+                                                                              , ['/login/']                                // An array of urls (URI's) that do not require authentication. Like /login/
+                                                                              );
         $AuthorizationRouter->route();
 
         $return['success']      = $AuthorizationRequest->authorized;
-        $return['current_user'] = $current_user;
 
         return $return;
     }
-
 }

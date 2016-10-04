@@ -6,14 +6,21 @@ class AuthenticationRouter {
 
 	private $authorized;
 	private $return;
+	private $uri;
+	private $whitelist;
 
-	function __construct($authorized, $return = false) {
+	function __construct($authorized, $return = false, $uri, $whitelist) {
 		$this->authorized = $authorized;
 		$this->return     = $return;
+		$this->uri        = $uri;
+		$this->whitelist  = $whitelist;
 		
 	}
 
 	function route() {
+
+		//If the URI is in the whitelist, do not process further. This is a logged out page.
+		if(in_array($this->uri, $this->whitelist)) return true;
 
 		//If we are not authorized, show the denied page.
 		if(!$this->authorized) {
