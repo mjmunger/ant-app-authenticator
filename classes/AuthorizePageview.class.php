@@ -7,8 +7,6 @@ class AuthorizePageview extends AuthorizationRequest
 	function authenticate() {
 		//Authorize with key in cookies if present
 		if(isset($this->cookies['users_token'])) return $this->authenticateKey();
-		//echo "<pre>"; var_dump($this->cookies); echo "</pre>";
-		//die(__FILE__  . ':' . __LINE__ );
 
 		//If there is no token, try to authenticate with user / pass.
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) return $this->authenticateUserPass();
@@ -45,6 +43,7 @@ class AuthorizePageview extends AuthorizationRequest
 	}
 
 	function authenticateUserPass() {
+
 		$username = $this->credentials['username'];
 		$password = $this->credentials['password'];
 		$hash     = NULL;

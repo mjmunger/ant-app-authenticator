@@ -7,7 +7,7 @@ class AuthenticationRouter {
 	private $authorized;
 	private $return;
 	private $uri;
-	//private $AuthenticationWhitelistManager;
+	private $AuthenticationWhitelistManager;
 
 	function __construct($authorized, $return = false, $uri, $AuthenticationWhitelistManager) {
 		$this->authorized 					   = $authorized;
@@ -21,12 +21,17 @@ class AuthenticationRouter {
 
 		if($this->authorized) {
 
+			//Special case allowing us to logout.
+			if($this->uri == '/logout/') {
+				return true;
+			}
+
 			//We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
 			if(!$this->return && $this->uri == '/login/') $this->return = '/';
 
 			//If we have a return set in the get request:
 			if($this->return) {
-				header("HTTP/1.1 301 Moved Permanently");
+				//header("HTTP/1.1 302 Moved Temporarily");
 				header("location: " . $this->return);
 			}
 			return true;
@@ -34,14 +39,12 @@ class AuthenticationRouter {
 
         //If this URI is whitelisted, authentication is not necessary. Bug out now to prevent 301 redirection loops.
         if($this->AuthenticationWhitelistManager->isWhitelisted($this->uri)) {
-            echo "URI on whitelist. Not authenticating";
             return ['success' => true];
         }
 
 		//If we are not authorized, show the denied page.
 		if(!$this->authorized) {
-			header("HTTP/1.1 301 Moved Permanently");
-			header("location: /login/");
+			header("location: /login/?return=" . urlencode($this->uri));
 		}
 
 		//Otherwise, let it ride!

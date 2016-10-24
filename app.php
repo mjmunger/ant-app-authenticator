@@ -211,7 +211,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         }
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
-        
+
         $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
                                                                               , $options['return']                         // If a return url is specified, submit that.
                                                                               , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.

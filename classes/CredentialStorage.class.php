@@ -83,4 +83,27 @@ class CredentialStorage
 			     , true                   // httponly. Deny Javascript access.
 			     );
 	}
+
+	function removeCredentials($token,$domain) {
+
+		$sql  = "DELETE FROM `user_tokens` WHERE `user_tokens_token` = ?";
+		$stmt = $this->pdo->prepare($sql);
+		$vars = [$token];
+		if(!$stmt->execute($vars)) {
+			echo "<pre>"; var_dump($stmt->errorInfo()); echo "</pre>";
+			echo "<pre>"; var_dump($stmt); echo "</pre>";
+			echo "<pre>"; var_dump($vars); echo "</pre>";
+		} 
+
+		//Kill the cookie.
+		setcookie( 'users_token'          // Cookie name
+			     , ''	                  // Null out the token.
+			     , 1					  // 1 is used instead of 0, because 0 sets the cookie to expire at the end of the session.
+			     , '/'                    // Cookie is good for our entire domain / project.
+			     , $domain                // Entire domain.
+			     , true                   // Secure only if possible.
+			     , true                   // httponly. Deny Javascript access.
+			     );
+		header("location: /");
+	}
 }
