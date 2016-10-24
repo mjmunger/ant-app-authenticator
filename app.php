@@ -53,7 +53,13 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
      **/
 
     function loadAntAuthenticator() {
-        $grammar = [];
+        $grammar = ['authentication' => [ 'uri' => [ 'whitelist' => [ 'add'    => NULL
+                                                                    , 'remove' => NULL
+                                                                    , 'show'   => NULL
+                                                                    ]
+                                                   ]
+                                        ]
+                   ];
 
         $this->loaded = true;
         
@@ -116,16 +122,48 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         return ['success' => true];
     }
 
+    function manageURIWhitelist($args) {
+
+        $AWM = new AuthenticationWhitelistManager($args);
+
+        switch ($args['command']->tokens[3]) {
+
+            case 'add':
+                $regex = $args['command']->leftStrip('authentication uri whitelist add');
+                print "Adding $regex to URI Whitelist Registry" . PHP_EOL;
+                $AWM->add($regex);
+                break;
+
+            case 'remove':
+                $regex = $args['command']->leftStrip('authentication uri whitelist remove');
+                $AWM->remove($regex);
+                break;
+
+            case 'show':
+                $AWM->show();
+                break;
+            
+            default:
+                print "Command not understood." . PHP_EOL;
+                break;
+        }
+
+    }
+
     function processCommand($args) {
         $cmd = $args['command'];
+
+        if($cmd->startsWith('authentication uri whitelist')) {
+            $this->manageURIWhitelist($args);    
+        }
 
         return ['success' => true];
     }
 
     function authenticateUser($args) {
-
         //Allow CLI access all the time.
         if(php_sapi_name() == 'cli') return ['success' => true] ;
+
         //Get the authorization request object:
         $options['pdo']         = $args['AE']->Configs->pdo;
         $options['uri']         = $args['AE']->Configs->Server->Request->uri;
@@ -133,25 +171,31 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         $options['post']        = $args['AE']->Configs->Server->Request->post_vars;
         $options['cookies']     = $args['AE']->Configs->Server->Request->cookies;
 
+        //Default the return to the main page...
         $options['return']      = false;
+
+        //Allow it to be overridden if return is set in the GET request.
         if(isset($args['AE']->Configs->Server->Request->get_vars['return'])) $options['return'] = $args['AE']->Configs->Server->Request->get_vars['return'];
 
         $options['credentials'] = array_merge($options['get'], $options['post']);
-
  
         //If we are using API authentication, the key should be in the get request.
         //If we are using content authentication, the user / pass should be in post vars.
 
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
-        $AuthorizationRequest->authenticate($options);
+        $users_id = $AuthorizationRequest->authenticate($options);
 
         //Is we are authorized (by user / pass) and should issue an authorization token (cookie), then...
         if($AuthorizationRequest->authorized && $AuthorizationRequest->shouldIssueCredentials) {
+
             //Store the credentials for the session or for a while.
-            $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage();
+            $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage($args['AE']->Configs->pdo
+                                                                             ,$AuthorizationRequest->users_id
+                                                                             ,$AuthorizationRequest->users_roles_id
+                                                                             );
             $CredentialStorage->setRememberMe(isset($args['AE']->Configs->Server->Request->post_vars['remember']));
-            $CredentialStorage->setExpiry($args['AE']->Configs->getConfigs(['credentials-valid-for']));
-            $CredentialStorage->issueCredentials();
+            $CredentialStorage->setExpiry($args['AE']->Configs->getConfigs(['credentials-valid-for'])['credentials-valid-for']);
+            $CredentialStorage->issueCredentials($args['AE']->Configs->getDomain());
         }
 
         //Save the current_user in the AppEngine for later use.
@@ -166,10 +210,12 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
             if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
         }
 
+        $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
+        
         $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
                                                                               , $options['return']                         // If a return url is specified, submit that.
                                                                               , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
-                                                                              , ['/login/']                                // An array of urls (URI's) that do not require authentication. Like /login/
+                                                                              , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
                                                                               );
         $AuthorizationRouter->route();
 

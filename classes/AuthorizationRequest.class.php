@@ -11,6 +11,7 @@ class AuthorizationRequest {
 	public $returnURL              = NULL;
 	public $cookies                = NULL;
 	public $users_id               = false;
+	public $users_roles_id         = false;
 	public $shouldIssueCredentials = false;
 
 	function __construct($options) {

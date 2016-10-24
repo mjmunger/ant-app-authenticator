@@ -5,9 +5,10 @@ namespace PHPAnt\Authentication;
 class AuthorizePageview extends AuthorizationRequest 
 {
 	function authenticate() {
-
 		//Authorize with key in cookies if present
 		if(isset($this->cookies['users_token'])) return $this->authenticateKey();
+		//echo "<pre>"; var_dump($this->cookies); echo "</pre>";
+		//die(__FILE__  . ':' . __LINE__ );
 
 		//If there is no token, try to authenticate with user / pass.
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) return $this->authenticateUserPass();
@@ -50,7 +51,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		//First, find the user account, if it exists.
 		$sql = "SELECT 
-				    users_id, users_password
+				    users_id, users_roles_id, users_password
 				FROM
 				    users
 				WHERE
@@ -68,7 +69,8 @@ class AuthorizePageview extends AuthorizationRequest
 		
 		$this->shouldIssueCredentials = $this->authorized;
 
-		$this->users_id = ($this->authorized ? (int) $row->users_id : false);
+		$this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
+		$this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
 		return $this->users_id;
 	}
