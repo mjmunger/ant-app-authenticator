@@ -53,13 +53,18 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
      **/
 
     function loadAntAuthenticator() {
-        $grammar = ['authentication' => [ 'uri' => [ 'whitelist' => [ 'add'    => NULL
+        $grammar['authentication'] = [ 'uri' => [ 'whitelist' => [ 'add'    => NULL
                                                                     , 'remove' => NULL
                                                                     , 'show'   => NULL
                                                                     ]
                                                    ]
+                                        ];
+
+        $grammar['ad'] = ['settings' => [ 'set'  => NULL
+                                        , 'del'  => NULL
+                                        , 'show' => NULL
                                         ]
-                   ];
+                         ];
 
         $this->loaded = true;
 
@@ -85,38 +90,27 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         $candidate_files = array();
 
-        $targetDirectories = [$baseDir . '/classes/', $baseDir . '/libs/adLDAP/src/Classes',$baseDir . '/libs/adLDAP/src/'];
+        //Try to grab it from the classes directory.
+        $candidate_path = sprintf($baseDir. '/classes/%s.class.php',$class);
+        array_push($candidate_files, $candidate_path);
 
-        foreach($targetDirectories as $dir) {
+        //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
+        foreach($candidate_files as $dependency) {
+            if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
+            // printf("Looking to load %s <br>",$dependency) . PHP_EOL;
 
-          //Try to grab it from the classes directory.
-          $candidate_path = sprintf($dir. '%s.class.php',$class);
-          array_push($candidate_files, $candidate_path);
+            if(file_exists($dependency)) {
+                if(is_readable($dependency)) {
 
-          $candidate_path = sprintf($dir. '%s.php',$class);
-          array_push($candidate_files, $candidate_path);
+                    //Print debug info if verbosity is greater than 9
+                    if($this->verbosity > 9) print "Including: " . $dependency . PHP_EOL;
 
-          $candidate_path = sprintf($dir. '%s.php',ucwords(strtolower($class)));
-          array_push($candidate_files, $candidate_path);
-
-          //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
-          foreach($candidate_files as $dependency) {
-              if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
-              printf("Looking to load %s <br>",$dependency) . PHP_EOL;
-
-              if(file_exists($dependency)) {
-                  if(is_readable($dependency)) {
-
-                      //Print debug info if verbosity is greater than 9
-                      if($this->verbosity > 9) print "Including: " . $dependency . PHP_EOL;
-
-                      //Include the file!
-                      require_once($dependency);
-                      print "Found: " . $dependency;
-                      print "<BR>";
-                    }
-                  }
+                    //Include the file!
+                    require_once($dependency);
+                    // print "Found: " . $dependency;
+                    // print "<BR>";
                 }
+            }
         }
         return ['success' => true];
     }
@@ -170,7 +164,44 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
             $this->manageURIWhitelist($args);
         }
 
+        if($cmd->startswith('ad settings')) $this->setAd($args);
+
         return ['success' => true];
+    }
+
+    function setAd($args) {
+        $settings = $args['command']->leftStrip('ad settings');
+        switch($args['command']->getToken(2)) {
+            case 'set':
+                $buffer = explode(' ', $settings);
+                $data = json_decode($args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'], true);
+                $settings = $data !== null ? $data : [];
+                $settings[$buffer[1]] = $buffer[2];
+                $save = json_encode($settings);
+                $args['AE']->Configs->setConfig('ad-settings', $save);
+                break;
+            case 'del':
+                $key = $args['command']->getToken(3);
+                if(!empty($key)) {
+                    $data     = json_decode( $args['AE']->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
+                    $settings = $data !== null ? $data : [];
+                    unset($settings[$key]);
+                    $save = json_encode($settings);
+                    $args['AE']->Configs->setConfig('ad-settings', $save);
+                }
+                break;
+            case 'show':
+                $data = json_decode($args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'], true);
+                foreach($data as $key => $value) {
+                    print str_pad($key,20);
+                    print $value;
+                    print PHP_EOL;
+                }
+                break;
+            default:
+                echo "Command not understood.\n";
+                break;
+        }
     }
 
     function authenticateUser($args) {

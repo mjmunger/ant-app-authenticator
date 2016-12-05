@@ -109,8 +109,12 @@ class AuthorizePageview extends AuthorizationRequest
 		$password = $this->credentials['password'];
 		$hash     = NULL;
 
+		$data     = json_decode( $args['AE']->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
+		$settings = $data !== null ? $data : [];
+		$settings['domain_controllers'] = [$settings['domain_controllers']];
+
 		// 1. Attempt to authenticate against AD
-		$adldap = new \AdLDAP\AdLDAP($settings);
+		$adldap = new \Adldap\Adldap($settings);
 		$this->authorized = $adldap->user()->authenticate($username, $password);
 
 		$logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
@@ -119,7 +123,10 @@ class AuthorizePageview extends AuthorizationRequest
 		$logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
 		$args['AE']->log('Authentication',$logMessage);
 
-		// 2. If successful, check to see if hte user exists in the DB. (We'll create a user on the fly).
+		// 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
+
+		
+
 		// 3. If the user exists, GREAT! theyhave logged in before. Update the record if needed.
 		// 4. Store any roles / groups in the DB for the user.
 		// 5. Return a user ID to make the class upstream happy.
