@@ -21,7 +21,7 @@ namespace PHPAnt\Core;
  * @subpackage   Core
  * @category     Authentication
  * @author       Michael Munger <michael@highpoweredhelp.com>
- */ 
+ */
 
 
 class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppInterface  {
@@ -48,7 +48,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
      * Callback for the cli-load-grammar action, which adds commands specific to this plugin to the CLI grammar.
      * Example:
      *
-     * @return array An array of CLI grammar that will be merged with the rest of the grammar. 
+     * @return array An array of CLI grammar that will be merged with the rest of the grammar.
      * @author Michael Munger <michael@highpoweredhelp.com>
      **/
 
@@ -62,7 +62,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
                    ];
 
         $this->loaded = true;
-        
+
         $results['grammar'] = $grammar;
         $results['success'] = true;
         return $results;
@@ -70,14 +70,14 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
     //Uncomment this function and the following function to enable the autoloader for this plugin.
     function AntAuthenticatorAutoLoader() {
-        //REGISTER THE AUTOLOADER! This has to be done first thing! 
+        //REGISTER THE AUTOLOADER! This has to be done first thing!
         spl_autoload_register(array($this,'loadAntAuthenticatorClasses'));
         return ['success' => true];
 
     }
 
     public function loadAntAuthenticatorClasses($class) {
-        
+
         $buffer = explode('\\', $class);
         $class = end($buffer);
 
@@ -85,29 +85,42 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         $candidate_files = array();
 
-        //Try to grab it from the classes directory.
-        $candidate_path = sprintf($baseDir.'/classes/%s.class.php',$class);
-        array_push($candidate_files, $candidate_path);
+        $targetDirectories = [$baseDir . '/classes/', $baseDir . '/libs/adLDAP/src/Classes',$baseDir . '/libs/adLDAP/src/'];
 
-        //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
-        foreach($candidate_files as $dependency) {
-            if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
-            //printf("Looking to load %s",$dependency) . PHP_EOL;
+        foreach($targetDirectories as $dir) {
 
-            if(file_exists($dependency)) {
-                if(is_readable($dependency)) {
+          //Try to grab it from the classes directory.
+          $candidate_path = sprintf($dir. '%s.class.php',$class);
+          array_push($candidate_files, $candidate_path);
 
-                    //Print debug info if verbosity is greater than 9
-                    if($this->verbosity > 9) print "Including: " . $dependency . PHP_EOL;
+          $candidate_path = sprintf($dir. '%s.php',$class);
+          array_push($candidate_files, $candidate_path);
 
-                    //Include the file!
-                    include($dependency);
+          $candidate_path = sprintf($dir. '%s.php',ucwords(strtolower($class)));
+          array_push($candidate_files, $candidate_path);
+
+          //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
+          foreach($candidate_files as $dependency) {
+              if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
+              printf("Looking to load %s <br>",$dependency) . PHP_EOL;
+
+              if(file_exists($dependency)) {
+                  if(is_readable($dependency)) {
+
+                      //Print debug info if verbosity is greater than 9
+                      if($this->verbosity > 9) print "Including: " . $dependency . PHP_EOL;
+
+                      //Include the file!
+                      require_once($dependency);
+                      print "Found: " . $dependency;
+                      print "<BR>";
+                    }
+                  }
                 }
-            }
         }
         return ['success' => true];
     }
-    
+
     /**
      * Callback function that prints to the CLI during cli-init to show this plugin has loaded.
      * Example:
@@ -142,7 +155,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
             case 'show':
                 $AWM->show();
                 break;
-            
+
             default:
                 print "Command not understood." . PHP_EOL;
                 break;
@@ -154,15 +167,19 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         $cmd = $args['command'];
 
         if($cmd->startsWith('authentication uri whitelist')) {
-            $this->manageURIWhitelist($args);    
+            $this->manageURIWhitelist($args);
         }
 
         return ['success' => true];
     }
 
     function authenticateUser($args) {
+
         //Allow CLI access all the time.
         if(php_sapi_name() == 'cli') return ['success' => true] ;
+
+        //Pass down app verbosity for debugging.
+        $options['verbosity']   = $this->verbosity;
 
         //Get the authorization request object:
         $options['pdo']         = $args['AE']->Configs->pdo;
@@ -178,12 +195,19 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         if(isset($args['AE']->Configs->Server->Request->get_vars['return'])) $options['return'] = $args['AE']->Configs->Server->Request->get_vars['return'];
 
         $options['credentials'] = array_merge($options['get'], $options['post']);
- 
+
         //If we are using API authentication, the key should be in the get request.
         //If we are using content authentication, the user / pass should be in post vars.
 
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
-        $users_id = $AuthorizationRequest->authenticate($options);
+        $users_id = $AuthorizationRequest->authenticate($options, $args);
+
+        //Record log messages from the AuthorizationRequest object if verbosity is high enough.
+        if($args['AE']->verbosity > 9) {
+          foreach($AuthorizationRequest->logMessages as $message) {
+            $args['AE']->log('Authenticator',$message);
+          }
+        }
 
         //Is we are authorized (by user / pass) and should issue an authorization token (cookie), then...
         if($AuthorizationRequest->authorized && $AuthorizationRequest->shouldIssueCredentials) {
@@ -199,12 +223,12 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         }
 
         //Save the current_user in the AppEngine for later use.
-        
+
         if($AuthorizationRequest->authorized) {
             $current_user = new Users($args['AE']->Configs->pdo);
             $current_user->users_id = $AuthorizationRequest->users_id;
             $current_user->load_me();
-    
+
             $return['current_user'] = $current_user;
 
             if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
