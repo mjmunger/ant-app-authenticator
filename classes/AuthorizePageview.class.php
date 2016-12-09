@@ -4,10 +4,13 @@ namespace PHPAnt\Authentication;
 
 class AuthorizePageview extends AuthorizationRequest
 {
+<<<<<<< HEAD
 	function enQuote($buffer) {
 		return sprintf('"%s"',$buffer);
 	}
 
+=======
+>>>>>>> 0d68dc256c46056436d0c9ef9352e3f445e0d00f
 	function authenticate($options, $args) {
 
 		//Authorize with key in cookies if present
@@ -22,9 +25,13 @@ class AuthorizePageview extends AuthorizationRequest
 
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
+<<<<<<< HEAD
 			// echo "<pre>"; var_dump($adSettings); echo "</pre>";
 			// die(__FILE__ . ":" . __LINE__);
 			if($adSettings && $adSettings['enabled'] == 1) return $this->authenticateADUserPass($args);
+=======
+			if($adSettings) return $this->authenticateADUserPass($args);
+>>>>>>> 0d68dc256c46056436d0c9ef9352e3f445e0d00f
 
 			//Default to user / pass authentication in our database.
 			return $this->authenticateUserPass($args);
@@ -131,6 +138,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		// 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
 
+<<<<<<< HEAD
 		$sql = "SELECT users_id FROM users where users_guid = ?";
 		$stmt = $args['AE']->Configs->pdo->prepare($sql);
 		$values = [$guid];
@@ -232,5 +240,13 @@ class AuthorizePageview extends AuthorizationRequest
 		$return = $args['AE']->Configs->pdo->lastInsertId();
 
 		return $return;
+=======
+		
+
+		// 3. If the user exists, GREAT! theyhave logged in before. Update the record if needed.
+		// 4. Store any roles / groups in the DB for the user.
+		// 5. Return a user ID to make the class upstream happy.
+
+>>>>>>> 0d68dc256c46056436d0c9ef9352e3f445e0d00f
 	}
 }
