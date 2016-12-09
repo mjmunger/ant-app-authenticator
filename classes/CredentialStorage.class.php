@@ -78,8 +78,8 @@ class CredentialStorage
 			     , $token                 // Token - sha256 hash of cryptographically secure random bytes.
 			     , $this->expiry + $now   // Cookie will expire now + $this->expiry (in seconds).
 			     , '/'                    // Cookie is good for our entire domain / project.
-			     //, $domain                // Entire domain.
-			     //, true                   // Secure only if possible.
+			     , ''                // Entire domain.
+			     , true                   // Secure only if possible.
 			     //, true                   // httponly. Deny Javascript access.
 			     );
 	}
@@ -100,9 +100,9 @@ class CredentialStorage
 			     , ''	                  // Null out the token.
 			     , 1					  // 1 is used instead of 0, because 0 sets the cookie to expire at the end of the session.
 			     , '/'                    // Cookie is good for our entire domain / project.
-			     , $domain                // Entire domain.
+			     , ''                     // Entire domain.
 			     , true                   // Secure only if possible.
-			     , true                   // httponly. Deny Javascript access.
+			     //, true                   // httponly. Deny Javascript access.
 			     );
 		header("location: /");
 	}

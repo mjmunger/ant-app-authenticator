@@ -165,14 +165,15 @@ class AuthorizePageview extends AuthorizationRequest
 						  );
             //Set the userId and User Role of this object so that other things don't fail.
             $this->users_id       = $row->users_id;
+
+            //Check the roles to make sure they still have access, or to see if the access should be updated.
+
             $this->users_roles_id = $row->users_roles_id;
-			return $row->users_id;
 		}
 
 		//First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
 
 		$groups = $adldap->user()->groups($username);
-
 
 		//Put quotes around all the groups.
 		$groups = array_map([$this,'enQuote'], $groups);
@@ -196,8 +197,14 @@ class AuthorizePageview extends AuthorizationRequest
 						, 9
 						);
 
+         //User does not belong to any groups that have access to the system.
 		if($stmt->rowCount() == 0) {
-            return false; //User does not belong to any groups that have access to the system.
+            //Destroy any hope of getting credentials.
+            $this->authorized             = false;
+            $this->shouldIssueCredentials = false;
+            unset($this->users_id);
+            unset($this->users_role_id);
+            return false;
         }
 
 		//OK, good. The user belongs to a group that has permissions on this system. Now, let's see if the user exists, and if not, create it.
