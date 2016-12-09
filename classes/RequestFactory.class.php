@@ -3,11 +3,11 @@
 namespace PHPAnt\Authentication;
 
 class RequestFactory {
-	
+
 	static function getRequestAuthorization($options) {
 
         /**
-         *  Determine if the request is for an API or content. 
+         *  Determine if the request is for an API or content.
          *  All APIs must have /api/ as the root of the URI. You can have many,
          *  many APIs, but they must all be under /api/
          *
@@ -20,7 +20,7 @@ class RequestFactory {
 
         $regex = '%^\/api\/.*%';
 
-        $Request = (preg_match($regex, $options['uri']) > 0 
+        $Request = (preg_match($regex, $options['uri']) > 0
                    ? new AuthorizeAPI($options)
                    : new AuthorizePageview($options)
                    );
