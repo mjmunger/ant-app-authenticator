@@ -22,7 +22,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
-			if($adSettings) return $this->authenticateADUserPass($args);
+			if($adSettings && $adSettings['enabled'] == 1) return $this->authenticateADUserPass($args);
 
 			//Default to user / pass authentication in our database.
 			return $this->authenticateUserPass($args);
@@ -36,7 +36,7 @@ class AuthorizePageview extends AuthorizationRequest
 		$args['AE']->log('Authentication',"Attempting key authentication");
 
 		$sql = "SELECT
-				    users_id
+				    users_id,users_roles_id
 				FROM
 				    user_tokens
 				WHERE
@@ -56,7 +56,8 @@ class AuthorizePageview extends AuthorizationRequest
 		//We authenticated with a valid token, keep using it.
 		$this->shouldIssueCredentials = false;
 
-		$this->users_id = ($this->authorized ? (int) $row->users_id : false);
+		$this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
+        $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
 		$logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
 		$args['AE']->log('Authentication',$logMessage);
@@ -105,6 +106,8 @@ class AuthorizePageview extends AuthorizationRequest
 
 	function authenticateADUserPass($args) {
 
+		$AE = $args['AE'];
+
 		$logMessage = "Attempting authentication against active directory";
 		$args['AE']->log('Authentication',$logMessage);
 
@@ -121,6 +124,18 @@ class AuthorizePageview extends AuthorizationRequest
 		$adldap = new \Adldap\Adldap($settings);
 		$this->authorized = $adldap->user()->authenticate($username, $password);
 
+        if(!$this->authorized) return false;
+
+        //We are authorized, so let's get the user information from AD.
+        $user = $adldap->user()->info($username);
+
+        $email = $user['mail'];
+        $first = $user['givenname'];
+        $last  = $user['sn'];
+        $guid  = bin2hex($user['objectguid']);
+
+		$args['AE']->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
+
 		$logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
 		$args['AE']->log('Authentication',$logMessage);
 		$this->shouldIssueCredentials = $this->authorized;
@@ -129,48 +144,67 @@ class AuthorizePageview extends AuthorizationRequest
 
 		// 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
 
-		$sql = "SELECT users_id FROM users where users_guid = ?";
+		$sql = "SELECT users_id,users_roles_id FROM users where users_guid = ?";
 		$stmt = $args['AE']->Configs->pdo->prepare($sql);
 		$values = [$guid];
 		$result = $stmt->execute($values);
 
+		$AE->log( 'Authentication'
+		        , sprintf('User exists in the local database: %s',($stmt->rowCount() > 0 ? "Yes" : "No"))
+						, 'AppEngine.log'
+						, 9
+					  );
+
 		if($stmt->rowCount() > 0) {
 			//return that user's id.
 			$row = $stmt->fetchObject();
+			$AE->log( 'Authentication'
+			        , sprintf('Returning database user ID: %s',  $row->users_id)
+							, 'AppEngine.log'
+							, 9
+						  );
+            //Set the userId and User Role of this object so that other things don't fail.
+            $this->users_id       = $row->users_id;
+            $this->users_roles_id = $row->users_roles_id;
 			return $row->users_id;
-		} 
+		}
 
 		//First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
 
 		$groups = $adldap->user()->groups($username);
-		$info = $adldap->user()->info($username);
-		
+
+
 		//Put quotes around all the groups.
 		$groups = array_map([$this,'enQuote'], $groups);
-		
+
 		//Create an "IN" clause string
 		$inClause = implode(', ', $groups);
+
+		$AE->log( 'Authentication'
+						, sprintf('User belongs to the following AD groups: %s',  $inClause)
+						, 'AppEngine.log'
+						, 9
+						);
 
 		$sql = sprintf("SELECT * FROM users_roles where users_roles_title IN ( %s )",$inClause);
 		$stmt = $args['AE']->Configs->pdo->prepare($sql);
 		$stmt->execute();
 
-		if($stmt->rowCount() == 0) return false; //User does not belong to any groups that have access to the system.
+		$AE->log( 'Authentication'
+						, sprintf('Number of AD groups for this user that have roles in the system: %s',  $stmt->rowCount())
+						, 'AppEngine.log'
+						, 9
+						);
 
-		//OK, good. The user belongs to a group that has permissions on this system. Now, let's see if the user exists, and if not, create it. 
+		if($stmt->rowCount() == 0) {
+            return false; //User does not belong to any groups that have access to the system.
+        }
+
+		//OK, good. The user belongs to a group that has permissions on this system. Now, let's see if the user exists, and if not, create it.
 		$row = $stmt->fetchObject();
 		$usersRole = $row->users_roles_id;
 
 		// Get the users information
-		echo "<pre>";
-
-		$user = $adldap->user()->info($username);
-
-		$email = $user['mail'];
-		$first = $user['givenname'];
-		$last  = $user['sn'];
-		$guid  = bin2hex($user['objectguid']);
-
 		$sql = "SELECT * FROM users where users_guid = ?";
 		$stmt = $args['AE']->Configs->pdo->prepare($sql);
 		$values = [$guid];
@@ -227,8 +261,9 @@ class AuthorizePageview extends AuthorizationRequest
 		$stmt = $args['AE']->Configs->pdo->prepare($sql);
 		$result = $stmt->execute($values);
 
-		$return = $args['AE']->Configs->pdo->lastInsertId();
+		$this->users_id = $args['AE']->Configs->pdo->lastInsertId();
+        $this->users_roles_id = $usersRole;
 
-		return $return;
+		return $this->users_id;
 	}
 }

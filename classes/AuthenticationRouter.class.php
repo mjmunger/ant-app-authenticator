@@ -14,7 +14,7 @@ class AuthenticationRouter {
 		$this->return     					   = $return;
 		$this->uri        					   = $uri;
 		$this->AuthenticationWhitelistManager  = $AuthenticationWhitelistManager;
-		
+
 	}
 
 	function route() {
@@ -22,9 +22,7 @@ class AuthenticationRouter {
 		if($this->authorized) {
 
 			//Special case allowing us to logout.
-			if($this->uri == '/logout/') {
-				return true;
-			}
+			if($this->uri == '/logout/') return true;
 
 			//We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
 			if(!$this->return && $this->uri == '/login/') $this->return = '/';

@@ -233,10 +233,11 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
         $users_id = $AuthorizationRequest->authenticate($options, $args);
 
+
         //Record log messages from the AuthorizationRequest object if verbosity is high enough.
         if($args['AE']->verbosity > 9) {
           foreach($AuthorizationRequest->logMessages as $message) {
-            $args['AE']->log('Authenticator',$message);
+              $args['AE']->log('Authenticator',$message);
           }
         }
 
@@ -249,7 +250,11 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
                                                                              ,$AuthorizationRequest->users_roles_id
                                                                              );
             $CredentialStorage->setRememberMe(isset($args['AE']->Configs->Server->Request->post_vars['remember']));
-            $CredentialStorage->setExpiry($args['AE']->Configs->getConfigs(['credentials-valid-for'])['credentials-valid-for']);
+            $configs = $args['AE']->Configs->getConfigs(['credentials-valid-for']);
+
+            $expiry = (count($configs) > 0 ? $configs['credentials-valid-for'] : 1800 );
+
+            $CredentialStorage->setExpiry($expiry);
             $CredentialStorage->issueCredentials($args['AE']->Configs->getDomain());
         }
 
@@ -257,7 +262,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         if($AuthorizationRequest->authorized) {
             $current_user = new Users($args['AE']->Configs->pdo);
-            $current_user->users_id = $AuthorizationRequest->users_id;
+            $current_user->users_id = $users_id;
             $current_user->load_me();
 
             $return['current_user'] = $current_user;
@@ -272,6 +277,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
                                                                               , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
                                                                               , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
                                                                               );
+
         $AuthorizationRouter->route();
 
         $return['success']      = $AuthorizationRequest->authorized;

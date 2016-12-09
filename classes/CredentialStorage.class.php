@@ -22,7 +22,7 @@ class CredentialStorage
 	}
 
 	function setExpiry($expiry) {
-		
+
 		//We might get a null or "" here if the credentials-vaild-for is not
 		//set, so keep it as zero unless we get a number.
 
@@ -34,7 +34,7 @@ class CredentialStorage
 		if(version_compare(phpversion(), '7.0.0','<')) {
 			$seed = bin2hex(openssl_random_pseudo_bytes(64));
 		} else {
-			$seed = bin2hex(random_bytes(64));		
+			$seed = bin2hex(random_bytes(64));
 		}
 
 		//To make this better, we should generate this key value per-installation at setup.
@@ -59,12 +59,12 @@ class CredentialStorage
 		if(!$stmt->execute($vars)) {
 			echo "<pre>"; var_dump($stmt->errorInfo()); echo "</pre>";
 			echo "<pre>"; var_dump($stmt); echo "</pre>";
+			echo "<pre>"; var_dump($vars); echo "</pre>";
 		}
 
 	}
 
 	function issueCredentials($domain) {
-
 		$now    = time();
 		$expiry = ($this->rememberMe ? $this->expiry : 0);
 		$token  = $this->generateToken();
@@ -78,9 +78,9 @@ class CredentialStorage
 			     , $token                 // Token - sha256 hash of cryptographically secure random bytes.
 			     , $this->expiry + $now   // Cookie will expire now + $this->expiry (in seconds).
 			     , '/'                    // Cookie is good for our entire domain / project.
-			     , $domain                // Entire domain.
-			     , true                   // Secure only if possible.
-			     , true                   // httponly. Deny Javascript access.
+			     //, $domain                // Entire domain.
+			     //, true                   // Secure only if possible.
+			     //, true                   // httponly. Deny Javascript access.
 			     );
 	}
 
@@ -93,7 +93,7 @@ class CredentialStorage
 			echo "<pre>"; var_dump($stmt->errorInfo()); echo "</pre>";
 			echo "<pre>"; var_dump($stmt); echo "</pre>";
 			echo "<pre>"; var_dump($vars); echo "</pre>";
-		} 
+		}
 
 		//Kill the cookie.
 		setcookie( 'users_token'          // Cookie name
