@@ -17,6 +17,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		// Check to see if you are using Active Directory Authentication
 		$adSettings = $args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'];
+
 		// If the array has content, try to convert to a JSON object.
 		$adSettings = (count($adSettings) > 0 ? json_decode($adSettings, true) : false );
 
@@ -65,7 +66,7 @@ class AuthorizePageview extends AuthorizationRequest
 		return $this->users_id;
 	}
 
-	function authenticateUserPass() {
+	function authenticateUserPass($args) {
 
 		$this->log("Attempting user / pass authentication");
 
