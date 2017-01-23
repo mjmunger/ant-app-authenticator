@@ -61,7 +61,6 @@ class CredentialStorage
 			echo "<pre>"; var_dump($stmt); echo "</pre>";
 			echo "<pre>"; var_dump($vars); echo "</pre>";
 		}
-
 	}
 
 	function issueCredentials($domain) {
@@ -84,7 +83,13 @@ class CredentialStorage
 			     );
 	}
 
-	function removeCredentials($token,$domain) {
+    /**
+     * Removes the credentials cookie from the browser
+     * @param  string   $token    The token that was assigned to this user.
+     * @param  string   $domain   The domain for which this credential is good for.
+     * @param  boolean $redirect Tells the method whether or not to redirect to the main page after the creds have been removed.
+     */
+	function removeCredentials($token,$domain, $redirect = true) {
 
 		$sql  = "DELETE FROM `user_tokens` WHERE `user_tokens_token` = ?";
 		$stmt = $this->pdo->prepare($sql);
@@ -104,6 +109,53 @@ class CredentialStorage
 			     , true                   // Secure only if possible.
 			     //, true                   // httponly. Deny Javascript access.
 			     );
-		header("location: /");
+
+		if($redirect) header("location: /");
 	}
+
+    function sudo() {
+        // Move the current user cookie to the sudo cookie.
+        $currentToken = $_COOKIE['users_token'];
+        $this->expiry = 3600;
+
+        setcookie( 'sudo'                 // Cookie name
+                 , $currentToken          // Null out the token.
+                 , 0					  // 1 is used instead of 0, because 0 sets the cookie to expire at the end of the session.
+                 , '/'                    // Cookie is good for our entire domain / project.
+                 , ''                     // Entire domain.
+                 , true                   // Secure only if possible.
+                 //, true                   // httponly. Deny Javascript access.
+                 );
+
+        // Generate a new token that is associated with this user and save as users_token.
+        $this->issueCredentials('/');
+    }
+
+    function sudoExit() {
+        // Get the sudo token from the cookie.
+        $originalToken = $_COOKIE['sudo'];
+        $expiry = 3600 * 24 * 30;
+
+        // Remove the sudo cookie
+        setcookie( 'sudo'          // Cookie name
+			     , ''	                  // Null out the token.
+			     , 1					  // 1 is used instead of 0, because 0 sets the cookie to expire at the end of the session.
+			     , '/'                    // Cookie is good for our entire domain / project.
+			     , ''                     // Entire domain.
+			     , true                   // Secure only if possible.
+			     //, true                   // httponly. Deny Javascript access.
+			     );
+
+        echo "<pre>"; var_dump($originalToken); echo "</pre>";
+
+        $result = setcookie( 'users_token'          // Cookie name
+                 , $originalToken         // Null out the token.
+                 , 0             	      // 1 is used instead of 0, because 0 sets the cookie to expire at the end of the session.
+                 , '/'                    // Cookie is good for our entire domain / project.
+                 , ''                     // Entire domain.
+                 , true                   // Secure only if possible.
+                 //, true                 // httponly. Deny Javascript access.
+                 );
+
+    }
 }

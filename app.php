@@ -96,14 +96,14 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         //Loop through all candidate files, and attempt to load them all in the correct order (FIFO)
         foreach($candidate_files as $dependency) {
-            if($this->verbosity > 14) printf("Looking to load %s",$dependency) . PHP_EOL;
+            if($this->verbosity > 11) printf("Looking to load %s",$dependency) . PHP_EOL;
             // printf("Looking to load %s <br>",$dependency) . PHP_EOL;
 
             if(file_exists($dependency)) {
                 if(is_readable($dependency)) {
 
                     //Print debug info if verbosity is greater than 9
-                    if($this->verbosity > 9) print "Including: " . $dependency . PHP_EOL;
+                    if($this->verbosity > 11) print "Including: " . $dependency . PHP_EOL;
 
                     //Include the file!
                     require_once($dependency);
@@ -241,14 +241,16 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
           }
         }
 
+        //we are going to either create a cookie or kill one. Either way, we need this.
+        $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage($args['AE']->Configs->pdo
+                                                                         ,$AuthorizationRequest->users_id
+                                                                         ,$AuthorizationRequest->users_roles_id
+                                                                         );
+
         //Is we are authorized (by user / pass) and should issue an authorization token (cookie), then...
         if($AuthorizationRequest->authorized && $AuthorizationRequest->shouldIssueCredentials) {
 
             //Store the credentials for the session or for a while.
-            $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage($args['AE']->Configs->pdo
-                                                                             ,$AuthorizationRequest->users_id
-                                                                             ,$AuthorizationRequest->users_roles_id
-                                                                             );
             $CredentialStorage->setRememberMe(isset($args['AE']->Configs->Server->Request->post_vars['remember']));
             $configs = $args['AE']->Configs->getConfigs(['credentials-valid-for']);
 
@@ -268,6 +270,16 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
             $return['current_user'] = $current_user;
 
             if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
+        } else {
+            //Destory the cookie (if it exists) because it was not valid.
+            $domain = $args['AE']->Configs->getDomain();
+
+            $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
+                      ? $args['AE']->Configs->Server->Request->cookies['users_token']
+                      : false
+                      );
+
+            if($token) $CredentialStorage->removeCredentials($token,$domain);
         }
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
