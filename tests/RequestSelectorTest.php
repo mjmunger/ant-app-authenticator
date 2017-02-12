@@ -3,10 +3,10 @@
 
 use PHPUnit\Framework\TestCase;
 
-$dependencies = [ 'test_top.php'
+$dependencies = [ 'tests/test_top.php'
 				, 'includes/apps/ant-app-authenticator/classes/AuthorizationRequest.class.php'
 				, 'includes/apps/ant-app-authenticator/classes/AuthorizeAPI.class.php'
-				, 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.php'
+				, 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.class.php'
 				, 'includes/apps/ant-app-authenticator/classes/RequestFactory.class.php'
 				];
 
