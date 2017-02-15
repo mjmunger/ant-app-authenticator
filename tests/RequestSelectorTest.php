@@ -11,7 +11,7 @@ $dependencies = [ 'test_top.php'
 				];
 
 foreach($dependencies as $dependency) {
-	require_once($dependency);
+	if(file_exists($dependency)) require_once($dependency);
 }
 
 class AuthorizationRequestTest extends TestCase
@@ -25,12 +25,13 @@ class AuthorizationRequestTest extends TestCase
 	 * @return void
 	 */
 
-	public function testPageviewOrAPI($url,$expectedClass, $credentials) {
+	public function testPageviewOrAPI($uri,$expectedClass, $credentials) {
+		$pdo = new PDOMock();
+
 		$options['credentials'] = $credentials;
-		$options['url']         = $url;
+		$options['uri']         = $uri;
 		$options['pdo']         = $pdo;
 
-		$pdo = new PDOMock();
 		$AuthorizationRequest = PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
 		$this->assertInstanceOf($expectedClass, $AuthorizationRequest);
 

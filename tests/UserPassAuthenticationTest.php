@@ -47,6 +47,7 @@ class UserPassAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
         $options['uri'] = '';
         $options['pdo'] = self::$pdo;
         $options['credentials'] = ['username' => $user, 'password' => $pass];
+        $options['AppEngine'] = getMyAppEngine(getDefaultOptions());
 
         $Auth = new \PHPAnt\Authentication\AuthorizePageview($options);
         $this->assertSame($Auth->authenticate(), $expected);

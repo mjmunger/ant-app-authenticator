@@ -3,6 +3,9 @@
 use PHPUnit\Framework;
 
 $dependencies = [ 'test_top.php'
+                , 'includes/apps/ant-app-authenticator/classes/AuthorizationRequest.class.php'
+                , 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.class.php'
+                , 'includes/apps/ant-app-authenticator/classes/AuthorizeAPI.class.php'
                 ];
 
 foreach($dependencies as $d) {
@@ -47,6 +50,7 @@ class KeyAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
         $options['uri']     = '';
         $options['pdo']     = self::$pdo;
         $options['cookies'] = ['users_token' => $token];
+        $options['AppEngine'] = getMyAppEngine(getDefaultOptions());
 
         $Auth = new \PHPAnt\Authentication\AuthorizePageview($options);
         $this->assertSame($Auth->authenticate(), $expected);

@@ -213,11 +213,16 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         $options['verbosity']   = $this->verbosity;
 
         //Get the authorization request object:
+        $options['AppEngine']   = $args['AE'];
         $options['pdo']         = $args['AE']->Configs->pdo;
         $options['uri']         = $args['AE']->Configs->Server->Request->uri;
         $options['get']         = $args['AE']->Configs->Server->Request->get_vars;
         $options['post']        = $args['AE']->Configs->Server->Request->post_vars;
         $options['cookies']     = $args['AE']->Configs->Server->Request->cookies;
+        $options['ad-settings'] = ( isset($args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'])
+                                  ? $args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings']
+                                  : false
+                                  ) ;
 
         //Default the return to the main page...
         $options['return']      = false;
@@ -231,7 +236,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         //If we are using content authentication, the user / pass should be in post vars.
 
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
-        $users_id = $AuthorizationRequest->authenticate($options, $args);
+        $users_id = $AuthorizationRequest->authenticate();
 
 
         //Record log messages from the AuthorizationRequest object if verbosity is high enough.

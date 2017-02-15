@@ -8,33 +8,29 @@ class AuthorizePageview extends AuthorizationRequest
 		return sprintf('"%s"',$buffer);
 	}
 
-	function authenticate($options, $args) {
+	function authenticate() {
 
 		//Authorize with key in cookies if present
-		if(isset($this->cookies['users_token'])) return $this->authenticateKey($args);
+		if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
 		//If there is no token, try to authenticate with user / pass.
 
-		// Check to see if you are using Active Directory Authentication
-		$adSettings = $args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'];
-
-		// If the array has content, try to convert to a JSON object.
-		$adSettings = (count($adSettings) > 0 ? json_decode($adSettings, true) : false );
+		if(!$this->adSettings === false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
 
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
-			if($adSettings && $adSettings['enabled'] == 1) return $this->authenticateADUserPass($args);
+			if($this->adSettings && $this->adSettings['enabled'] == 1) return $this->authenticateADUserPass();
 
 			//Default to user / pass authentication in our database.
-			return $this->authenticateUserPass($args);
+			return $this->authenticateUserPass();
 		}
 
 		//Well, we tried.
 		return false;
 	}
 
-	function authenticateKey($args) {
-		$args['AE']->log('Authentication',"Attempting key authentication");
+	function authenticateKey() {
+		$this->AppEngine->log('Authentication',"Attempting key authentication");
 
 		$sql = "SELECT
 				    users_id,users_roles_id
@@ -47,7 +43,10 @@ class AuthorizePageview extends AuthorizationRequest
 		$vars = [$this->cookies['users_token']];
 		$stmt->execute($vars);
 
-		if($stmt->rowCount() === 0) return false;
+		if($stmt->rowCount() === 0) {
+			$this->AppEngine->log('Authentication',"Key not found: " . $this->cookies['users_token']);
+			return false;
+		}
 
 		//Token exists. We are authorized.
 		$this->authorized = true;
@@ -61,12 +60,12 @@ class AuthorizePageview extends AuthorizationRequest
         $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
 		$logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 
 		return $this->users_id;
 	}
 
-	function authenticateUserPass($args) {
+	function authenticateUserPass() {
 
 		$this->log("Attempting user / pass authentication");
 
@@ -92,12 +91,12 @@ class AuthorizePageview extends AuthorizationRequest
 
 		$this->authorized = password_verify($password, $row->users_password);
 		$logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed");
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 
 		$this->shouldIssueCredentials = $this->authorized;
 
 		$logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 
 		$this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
 		$this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
