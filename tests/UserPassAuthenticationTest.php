@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework;
 
-$dependencies = [ 'test_top.php'
+$dependencies = [ 'tests/test_top.php'
                 ];
 
 foreach($dependencies as $d) {
