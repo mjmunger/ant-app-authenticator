@@ -73,6 +73,7 @@ class WebAuth extends AntAuth
 
     function validateKey($key) {
         if(!$this->validAPIKey($key)) {
+            http_response_code(403);
             header('HTTP/1.0 403 Forbidden');
             die('Access Denied');
         } 

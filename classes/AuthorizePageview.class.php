@@ -90,7 +90,7 @@ class AuthorizePageview extends AuthorizationRequest
 		$row = $stmt->fetchObject();
 
 		$this->authorized = password_verify($password, $row->users_password);
-		$logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed");
+		$logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed for " . $username);
 		$this->AppEngine->log('Authentication',$logMessage);
 
 		$this->shouldIssueCredentials = $this->authorized;
