@@ -1,0 +1,3 @@
+Change log
+
+Refactores the ad-settings lookups into the app out of the AuthorizePageView class, which eliminates the need for passing arguments to ::authenticate()
