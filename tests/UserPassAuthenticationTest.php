@@ -1,6 +1,7 @@
 <?php
 
-use PHPUnit\Framework;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\DbUnit\TestCaseTrait;
 
 $dependencies = [ 'tests/test_top.php'
                 ];
@@ -9,8 +10,9 @@ foreach($dependencies as $d) {
     require_once($d);
 }
 
-class UserPassAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
+class UserPassAuthenticationTest extends TestCase
 {
+    use TestCaseTrait;
     private $conn       = NULL;
     static private $pdo = NULL;
 

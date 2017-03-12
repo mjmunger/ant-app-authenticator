@@ -1,6 +1,6 @@
 <?php
-
-use PHPUnit\Framework;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\DbUnit\TestCaseTrait;
 
 $dependencies = [ 'tests/test_top.php'
                 ];
@@ -9,8 +9,10 @@ foreach($dependencies as $d) {
     require_once($d);
 }
 
-class APIAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
+class APIAuthenticationTest extends TestCase
 {
+    use TestCaseTrait;
+    
     private $conn       = NULL;
     static private $pdo = NULL;
 
@@ -20,7 +22,7 @@ class APIAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
 
         if($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = gimmiePDO(true);
+                self::$pdo = gimmiePDO();
             }
         }
 
