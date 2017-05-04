@@ -15,7 +15,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		//If there is no token, try to authenticate with user / pass.
 
-		if(!$this->adSettings === false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+		if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
 
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
