@@ -267,7 +267,7 @@ class AuthorizePageview extends AuthorizationRequest
 		$stmt = $this->pdo->prepare($sql);
 		$result = $stmt->execute($values);
 
-		$this->users_id = $args['AE']->Configs->pdo->lastInsertId();
+		$this->users_id = $this->pdo->lastInsertId();
         $this->users_roles_id = $usersRole;
 
 		return $this->users_id;
