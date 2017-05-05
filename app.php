@@ -248,7 +248,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
 
         //we are going to either create a cookie or kill one. Either way, we need this.
         $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage($args['AE']->Configs->pdo
-                                                                         ,$AuthorizationRequest->users_id
+                                                                         ,$users_id
                                                                          ,$AuthorizationRequest->users_roles_id
                                                                          );
 

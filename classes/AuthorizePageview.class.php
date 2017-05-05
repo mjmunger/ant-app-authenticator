@@ -135,6 +135,8 @@ class AuthorizePageview extends AuthorizationRequest
         $last  = $user['sn'];
         $guid  = bin2hex($user['objectguid']);
 
+        $this->AppEngine->log("User GUID: " . $guid);
+
 		$this->AppEngine->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
 
 		$logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
@@ -170,7 +172,9 @@ class AuthorizePageview extends AuthorizationRequest
             //Check the roles to make sure they still have access, or to see if the access should be updated.
 
             $this->users_roles_id = $row->users_roles_id;
-		}
+		} else {
+			$this->AppEngine->log("Authentication", "GUID did not return any user accounts for the user $username, which authenticated properly. This might be a problem... if the account was changed or the GUID for the user changed, you'll need to update it in the database (here) locally.");
+        }
 
 		//First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
 
