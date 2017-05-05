@@ -9,17 +9,20 @@ class AuthorizePageview extends AuthorizationRequest
 	}
 
 	function authenticate() {
-
 		//Authorize with key in cookies if present
 		if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
 		//If there is no token, try to authenticate with user / pass.
 
-		if(!$this->adSettings === false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+		if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
 
 		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
+
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
-			if($this->adSettings && $this->adSettings['enabled'] == 1) return $this->authenticateADUserPass();
+
+			if($this->adSettings) {
+				if((int) $adSettings['enabled'] == 1) return $this->authenticateADUserPass();
+			}
 
 			//Default to user / pass authentication in our database.
 			return $this->authenticateUserPass();
@@ -104,19 +107,17 @@ class AuthorizePageview extends AuthorizationRequest
 		return $this->users_id;
 	}
 
-	function authenticateADUserPass($args) {
-
-		$AE = $args['AE'];
+	function authenticateADUserPass() {
 
 		$logMessage = "Attempting authentication against active directory";
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 
 		// 0. For convenience:
 		$username = $this->credentials['username'];
 		$password = $this->credentials['password'];
 		$hash     = NULL;
 
-		$data     = json_decode( $args['AE']->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
+		$data     = json_decode( $this->AppEngine->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
 		$settings = $data !== null ? $data : [];
 		$settings['domain_controllers'] = [$settings['domain_controllers']];
 
@@ -134,22 +135,22 @@ class AuthorizePageview extends AuthorizationRequest
         $last  = $user['sn'];
         $guid  = bin2hex($user['objectguid']);
 
-		$args['AE']->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
+		$this->AppEngine->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
 
 		$logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 		$this->shouldIssueCredentials = $this->authorized;
 		$logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-		$args['AE']->log('Authentication',$logMessage);
+		$this->AppEngine->log('Authentication',$logMessage);
 
 		// 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
 
 		$sql = "SELECT users_id,users_roles_id FROM users where users_guid = ?";
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$values = [$guid];
 		$result = $stmt->execute($values);
 
-		$AE->log( 'Authentication'
+		$this->AppEngine->log( 'Authentication'
 		        , sprintf('User exists in the local database: %s',($stmt->rowCount() > 0 ? "Yes" : "No"))
 						, 'AppEngine.log'
 						, 9
@@ -158,7 +159,7 @@ class AuthorizePageview extends AuthorizationRequest
 		if($stmt->rowCount() > 0) {
 			//return that user's id.
 			$row = $stmt->fetchObject();
-			$AE->log( 'Authentication'
+			$this->AppEngine->log( 'Authentication'
 			        , sprintf('Returning database user ID: %s',  $row->users_id)
 							, 'AppEngine.log'
 							, 9
@@ -181,17 +182,17 @@ class AuthorizePageview extends AuthorizationRequest
 		//Create an "IN" clause string
 		$inClause = implode(', ', $groups);
 
-		$AE->log( 'Authentication'
+		$this->AppEngine->log( 'Authentication'
 						, sprintf('User belongs to the following AD groups: %s',  $inClause)
 						, 'AppEngine.log'
 						, 9
 						);
 
 		$sql = sprintf("SELECT * FROM users_roles where users_roles_title IN ( %s )",$inClause);
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute();
 
-		$AE->log( 'Authentication'
+		$this->AppEngine->log( 'Authentication'
 						, sprintf('Number of AD groups for this user that have roles in the system: %s',  $stmt->rowCount())
 						, 'AppEngine.log'
 						, 9
@@ -213,7 +214,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 		// Get the users information
 		$sql = "SELECT * FROM users where users_guid = ?";
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$values = [$guid];
 		$result = $stmt->execute($values);
 
@@ -224,7 +225,7 @@ class AuthorizePageview extends AuthorizationRequest
 
 			//Update the role.
 			$sql    = "UPDATE users SET users_roles_id = ?, users_last_login = ? WHERE users_id = ?";
-			$update = $args['AE']->Configs->pdo->prepare($sql);
+			$update = $this->pdo->prepare($sql);
 			$update->execute([$usersRole,date('Y-m-d H:i:s'),$usersId]);
 
 			$return = $row->users_id;
@@ -265,10 +266,10 @@ class AuthorizePageview extends AuthorizationRequest
 				  ];
 
 
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$result = $stmt->execute($values);
 
-		$this->users_id = $args['AE']->Configs->pdo->lastInsertId();
+		$this->users_id = $this->pdo->lastInsertId();
         $this->users_roles_id = $usersRole;
 
 		return $this->users_id;
