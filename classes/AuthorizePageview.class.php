@@ -20,7 +20,9 @@ class AuthorizePageview extends AuthorizationRequest
 
 			//If we are using AD Authentication, check AD, otherwise, check local DB.
 
-			if($this->adSettings && ((int) $adSettings['enabled'] == 1)) return $this->authenticateADUserPass();
+			if($this->adSettings) {
+				if((int) $adSettings['enabled'] == 1)) return $this->authenticateADUserPass();
+			}
 
 			//Default to user / pass authentication in our database.
 			return $this->authenticateUserPass();
