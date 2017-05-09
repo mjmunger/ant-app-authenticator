@@ -138,7 +138,7 @@ class AuthorizePageview extends AuthorizationRequest
         $last  = $user['sn'];
         $guid  = bin2hex($user['objectguid']);
 
-        $this->AppEngine->log("User GUID: " . $guid);
+        $this->AppEngine->log("Authentication", "User GUID: " . $guid);
 
 		$this->AppEngine->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
 
