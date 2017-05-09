@@ -14,23 +14,26 @@ class AuthorizePageview extends AuthorizationRequest
 
         //If there is no token, try to authenticate with user / pass.
 
-        if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+		//First, try local system users. AuthorizePageview::authenticateUserPass will return the user ID if authenticated or false otherwise.
+		$authenticated = $this->authenticateUserPass();
+		if($authenticated != false) return $authenticated;
+
+		//If we were unable to authenticate with a local user / pass, move on to try AD if it is enabled.
+
+		if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
 
         if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 
             //If we are using AD Authentication, check AD, otherwise, check local DB.
 
-            if($this->adSettings) {
-                if((int) $adSettings['enabled'] == 1) return $this->authenticateADUserPass();
-            }
+			if($this->adSettings) {
+				if((int) $adSettings['enabled'] == 1) return $this->authenticateADUserPass();
+			}
+		}
 
-            //Default to user / pass authentication in our database.
-            return $this->authenticateUserPass();
-        }
-
-        //Well, we tried.
-        return false;
-    }
+		//Well, we tried. Nothing worked. Deny access.
+		return false;
+	}
 
     function authenticateKey() {
         $this->AppEngine->log('Authentication',"Attempting key authentication");
