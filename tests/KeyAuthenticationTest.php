@@ -25,7 +25,7 @@ class KeyAuthenticationTest extends TestCase
 
         if($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = gimmiePDO(true);
+                self::$pdo = gimmiePDO();
             }
         }
 
