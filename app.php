@@ -594,6 +594,13 @@ FROM
         //If we are using content authentication, the user / pass should be in post vars.
 
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
+
+        $args['AE']->log( $this->appName
+                        , 'Authorization type: ' . $AuthorizationRequest->getRequestType()
+                        , 'AppEngine.log'
+                        , 9
+                        );
+        
         $users_id = $AuthorizationRequest->authenticate();
 
 
@@ -646,6 +653,10 @@ FROM
 
                 if($token) $CredentialStorage->removeCredentials($token,$domain);
             }
+        }
+
+        if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizeAPI) {
+            $args['AE']->log("API Accessed: " . $args['AE']->Configs->Server->Request->uri);
         }
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);

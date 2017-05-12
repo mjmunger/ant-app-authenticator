@@ -17,6 +17,7 @@ class AuthorizationRequest {
 	public $verbosity              = 0;
 	public $logMessages            = [];
 	public $adSettings			   = false;
+	public $requestType			   = false;
 
 	function __construct($options) {
 		$this->AppEngine   = isset($options['AppEngine'])   ? $options['AppEngine']   : NULL  ;
@@ -31,6 +32,10 @@ class AuthorizationRequest {
 
 	function log($message) {
 		array_push($this->logMessages, $message);
+	}
+
+	function getRequestType() {
+		return __CLASS__;
 	}
 	
 }
