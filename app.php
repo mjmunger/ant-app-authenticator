@@ -633,7 +633,7 @@ FROM
         //Save the current_user in the AppEngine for later use.
 
         //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
-        if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizePageview ) {
+        // if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizePageview ) {
             
             $args['AE']->log( "PHPAnt Authenticator"
                             , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
@@ -665,7 +665,7 @@ FROM
 
                 if($token) $CredentialStorage->removeCredentials($token,$domain);
             }
-        }
+        // }
 
         if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizeAPI) {
             $args['AE']->log( "PHPAnt Authenticator"
