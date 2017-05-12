@@ -625,24 +625,27 @@ FROM
 
         //Save the current_user in the AppEngine for later use.
 
-        if($AuthorizationRequest->authorized) {
-            $current_user = new Users($args['AE']->Configs->pdo);
-            $current_user->users_id = $users_id;
-            $current_user->load_me();
+        //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
+        if($AuthorizationRequest instanceof 'PHPAnt\Authentication\AuthorizePageview' ) {
+            if($AuthorizationRequest->authorized) {
+                $current_user = new Users($args['AE']->Configs->pdo);
+                $current_user->users_id = $users_id;
+                $current_user->load_me();
 
-            $return['current_user'] = $current_user;
+                $return['current_user'] = $current_user;
 
-            if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
-        } else {
-            //Destory the cookie (if it exists) because it was not valid.
-            $domain = $args['AE']->Configs->getDomain();
+                if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
+            } else {
+                //Destory the cookie (if it exists) because it was not valid.
+                $domain = $args['AE']->Configs->getDomain();
 
-            $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
-                      ? $args['AE']->Configs->Server->Request->cookies['users_token']
-                      : false
-                      );
+                $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
+                          ? $args['AE']->Configs->Server->Request->cookies['users_token']
+                          : false
+                          );
 
-            if($token) $CredentialStorage->removeCredentials($token,$domain);
+                if($token) $CredentialStorage->removeCredentials($token,$domain);
+            }
         }
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
