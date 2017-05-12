@@ -2,6 +2,10 @@
 
 namespace PHPAnt\Authentication;
 
+interface iAuthorizationRequest {
+	public function getRequestType();
+}
+
 class AuthorizationRequest {
 
 	public $uri                    = NULL;
@@ -33,9 +37,4 @@ class AuthorizationRequest {
 	function log($message) {
 		array_push($this->logMessages, $message);
 	}
-
-	function getRequestType() {
-		return __CLASS__;
-	}
-	
 }

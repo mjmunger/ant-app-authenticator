@@ -2,8 +2,12 @@
 
 namespace PHPAnt\Authentication;
 
-class AuthorizePageview extends AuthorizationRequest
+class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRequest
 {
+    public function getRequestType() {
+        return "AuthorizePageview";
+    }
+
     function enQuote($buffer) {
         return sprintf('"%s"',$buffer);
     }

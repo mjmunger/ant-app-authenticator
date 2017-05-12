@@ -2,8 +2,12 @@
 
 namespace PHPAnt\Authentication;
 
-class AuthorizeAPI extends AuthorizationRequest 
+class AuthorizeAPI extends AuthorizationRequest implements iAuthorizationRequest
 {
+	public function getRequestType() {
+		return "AuthorizeAPI";
+	}
+
 	/**
 	 * Determine if the API key is valid.
 	 * Example:
