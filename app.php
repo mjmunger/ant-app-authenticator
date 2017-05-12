@@ -626,7 +626,7 @@ FROM
         //Save the current_user in the AppEngine for later use.
 
         //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
-        if($AuthorizationRequest instanceof 'PHPAnt\Authentication\AuthorizePageview' ) {
+        if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizePageview ) {
             if($AuthorizationRequest->authorized) {
                 $current_user = new Users($args['AE']->Configs->pdo);
                 $current_user->users_id = $users_id;
