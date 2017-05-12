@@ -600,7 +600,7 @@ FROM
                         , 'AppEngine.log'
                         , 9
                         );
-        
+
         $users_id = $AuthorizationRequest->authenticate();
 
 
@@ -634,7 +634,19 @@ FROM
 
         //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
         if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizePageview ) {
+            
+            $args['AE']->log( "PHPAnt Authenticator"
+                            , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
+                            , 'AppEngine.log'
+                            ,9
+                            );
+
             if($AuthorizationRequest->authorized) {
+                $args['AE']->log( "PHPAnt Authenticator"
+                                , "User is authorized. Setting user information."
+                                , 'AppEngine.log'
+                                ,9
+                                );
                 $current_user = new Users($args['AE']->Configs->pdo);
                 $current_user->users_id = $users_id;
                 $current_user->load_me();
@@ -656,6 +668,11 @@ FROM
         }
 
         if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizeAPI) {
+            $args['AE']->log( "PHPAnt Authenticator"
+                            , "API instance detected."
+                            , 'AppEngine.log'
+                            ,9
+                            );
             $args['AE']->log("API Accessed: " . $args['AE']->Configs->Server->Request->uri);
         }
 
