@@ -593,12 +593,18 @@ FROM
         //If we are using API authentication, the key should be in the get request.
         //If we are using content authentication, the user / pass should be in post vars.
 
+        $args['AE']->log( $this->appName
+                        , 'Authorization URI: ' . $options['uri']
+                        , 'AppEngine.log',
+                        9
+                        );        
+
         $AuthorizationRequest = \PHPAnt\Authentication\RequestFactory::getRequestAuthorization($options);
 
         $args['AE']->log( $this->appName
                         , 'Authorization type: ' . $AuthorizationRequest->getRequestType()
-                        , 'AppEngine.log'
-                        , 9
+                        , 'AppEngine.log',
+                        9
                         );
 
         $users_id = $AuthorizationRequest->authenticate();
@@ -633,7 +639,7 @@ FROM
         //Save the current_user in the AppEngine for later use.
 
         //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
-        // if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizePageview ) {
+        if($AuthorizationRequest->getRequestType() == 'AuthorizePageview' ) {
             
             $args['AE']->log( "PHPAnt Authenticator"
                             , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
@@ -665,24 +671,45 @@ FROM
 
                 if($token) $CredentialStorage->removeCredentials($token,$domain);
             }
-        // }
+        }
 
-        if($AuthorizationRequest instanceof PHPAnt\Authentication\AuthorizeAPI) {
+        if($AuthorizationRequest->getRequestType() == 'AuthorizeAPI') {
+
             $args['AE']->log( "PHPAnt Authenticator"
                             , "API instance detected."
                             , 'AppEngine.log'
                             ,9
                             );
-            $args['AE']->log("API Accessed: " . $args['AE']->Configs->Server->Request->uri);
+
+            $args['AE']->log( "PHPAnt Authenticator"
+                            , "API Accessed: " . $args['AE']->Configs->Server->Request->uri
+                            );
+
+            //Fire the api-invalid-key event if the key is not valid.
+            
         }
 
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "Authoriztion status: " . ($AuthorizationRequest->authorized ? "Allowed" : "Denied")
+                        , 'AppEngine.log'
+                        ,9
+                        );
+
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
+        
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "Created whitelist manager"
+                        , 'AppEngine.log'
+                        ,9
+                        );
 
         $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
                                                                               , $options['return']                         // If a return url is specified, submit that.
                                                                               , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
                                                                               , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
+                                                                              , $args['AE']                                // Need this for logging.
                                                                               );
+
 
         $AuthorizationRouter->route();
 
