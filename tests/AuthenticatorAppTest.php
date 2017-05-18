@@ -115,7 +115,6 @@ class AuthenticatorAppTest extends TestCase
         $Configs = getWebConfigs(false,self::$pdo);
         $AppEngine = new AppEngine($Configs,$options);
 
-
         $this->assertInstanceOf('PHPAnt\Core\AppEngine', $AppEngine);
 
         $AppEngine->setVerbosity(10);

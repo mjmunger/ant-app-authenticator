@@ -28,7 +28,7 @@ class AuthorizeAPI extends AuthorizationRequest implements iAuthorizationRequest
 				    api_keys_key = ?";
 		
 		//Default: use the simpler "key"
-		$vars = [$this->credentials['key']];
+		if(isset($this->credentials['key'])) $vars = [$this->credentials['key']];
 
 		//Legacy support for apiKey - override if this variable is used. This should be removed in future releases.
 		if(isset($this->credentials['apiKey'])) $vars = [$this->credentials['apiKey']];

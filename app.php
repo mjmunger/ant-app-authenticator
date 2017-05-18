@@ -638,6 +638,10 @@ FROM
 
         $authenticated = $AuthorizationRequest->authenticate();
 
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "API access: " . ($AuthorizationRequest->authorized ? "GRANTED" : "DENIED")
+                        );
+
         //Run the api-access-denied event if they are not authorized.
         if($AuthorizationRequest->authorized == false) $result = $args['AE']->runActions('api-access-denied' , ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
         if($AuthorizationRequest->authorized == true ) $result = $args['AE']->runActions('api-access-granted', ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
@@ -646,7 +650,7 @@ FROM
         
     }
 
-    function destroyUnauthorizedUserAccess($args) {
+    function destroyUnauthorizedUserAccess($args, $CredentialStorage) {
             //Destory the cookie (if it exists) because it was not valid.
         $domain = $args['AE']->Configs->getDomain();
 
@@ -703,7 +707,7 @@ FROM
                         ,9
                         );
 
-        if($AuthorizationRequest->authorized != true)  $this->destroyUnauthorizedUserAccess($args);
+        if($AuthorizationRequest->authorized != true)  $this->destroyUnauthorizedUserAccess($args, $CredentialStorage);
 
 
         //User is authorized here.
