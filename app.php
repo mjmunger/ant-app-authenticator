@@ -612,7 +612,7 @@ FROM
                 break;
             
             case 'AuthorizePageview':
-                return $this->authenticateUser($args,$AuthorizationRequest);
+                return $this->authenticateUser($args, $options, $AuthorizationRequest);
                 break;
 
             default:
@@ -662,7 +662,7 @@ FROM
         if($token) $CredentialStorage->removeCredentials($token,$domain);
     }
 
-    function authenticateUser($args, $AuthorizationRequest) {
+    function authenticateUser($args, $options, $AuthorizationRequest) {
 
         $args['AE']->log( "PHPAnt Authenticator"
                         , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
