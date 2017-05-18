@@ -685,7 +685,11 @@ FROM
                             , "API Accessed: " . $args['AE']->Configs->Server->Request->uri
                             );
 
-            //Fire the api-invalid-key event if the key is not valid.
+            //Fire the api-access-denied event if the key is not valid, and pass
+            //the $keyValid and $keyExists values in case that action wants to
+            //use them.
+
+            $$args['AE']->runActions('api-access-denied', ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
             
         }
 
