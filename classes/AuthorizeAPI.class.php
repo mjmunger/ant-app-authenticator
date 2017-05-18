@@ -27,7 +27,12 @@ class AuthorizeAPI extends AuthorizationRequest implements iAuthorizationRequest
 				WHERE
 				    api_keys_key = ?";
 		
+		//Default: use the simpler "key"
 		$vars = [$this->credentials['key']];
+
+		//Legacy support for apiKey - override if this variable is used. This should be removed in future releases.
+		if(isset($this->credentials['apiKey'])) $vars = [$this->credentials['apiKey']];
+
 		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($vars);
 

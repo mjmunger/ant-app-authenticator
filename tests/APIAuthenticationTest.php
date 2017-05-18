@@ -42,14 +42,14 @@ class APIAuthenticationTest extends TestCase
      * @covers APIKeys
      * @return void
      */
-    public function testAPIKeys($key,$expectedAuthorized, $keyEnabled, $keyExists)
+    public function testAPIKeys($keyVar, $keyValue ,$expectedAuthorized, $keyEnabled, $keyExists)
     {
 
         //We don't need the URI to test the keys. But, we do need it for the constructor.
         $options['uri'] = '';
 
         $options['pdo'] = self::$pdo;
-        $options['credentials'] = ['key' => $key];
+        $options['credentials'] = [$keyVar => $keyValue];
 
         $Auth = new \PHPAnt\Authentication\AuthorizeAPI($options);
 
@@ -79,11 +79,15 @@ class APIAuthenticationTest extends TestCase
          * 
          * We only need to test 1, 7, and 8.
          */
-                    //key                                         //authorized   //enabled    //exists         
-        return  [ [ 'vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg' , true         , true       , true      ] // #1 above.
-                , [ 'zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq' , false        , false      , true      ] // #7 above.
-                , [ 'gentxyezqtxuuafgkhhmrdawgmstarv1wfaueeuuy' , false        , false      , false     ] // #8 above.
-                , [ 'gentxyezqtxuuafgkhhmrdawgmstarv1aueeuuy'   , false        , false      , false     ] // Malformed.
+                    //keyVar     //keyValue                                         //authorized   //enabled    //exists         
+        return  [ [ 'key'      , 'vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg' , true         , true       , true      ] // #1 above.
+                , [ 'key'      , 'zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq' , false        , false      , true      ] // #7 above.
+                , [ 'key'      , 'gentxyezqtxuuafgkhhmrdawgmstarv1wfaueeuuy' , false        , false      , false     ] // #8 above.
+                , [ 'key'      , 'gentxyezqtxuuafgkhhmrdawgmstarv1aueeuuy'   , false        , false      , false     ] // Malformed.
+                , [ 'apiKey'   , 'vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg' , true         , true       , true      ] // #1 above.
+                , [ 'apiKey'   , 'zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq' , false        , false      , true      ] // #7 above.
+                , [ 'apiKey'   , 'gentxyezqtxuuafgkhhmrdawgmstarv1wfaueeuuy' , false        , false      , false     ] // #8 above.
+                , [ 'apiKey'   , 'gentxyezqtxuuafgkhhmrdawgmstarv1aueeuuy'   , false        , false      , false     ] // Malformed.
                 ];
                 
                     
