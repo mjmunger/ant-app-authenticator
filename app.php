@@ -10,7 +10,7 @@ namespace PHPAnt\Core;
  * App Action: cli-init         -> declareMySelf              @ 50
  * App Action: load_loaders     -> AntAuthenticatorAutoLoader @ 50
  * App Action: cli-command      -> processCommand             @ 50
- * App Action: auth-user        -> authenticateUser           @ 50
+ * App Action: auth-user        -> authenticateRequest        @ 50
  */
 
  /**
@@ -562,10 +562,9 @@ FROM
         }
     }
 
-    function authenticateUser($args) {
-
+    function authenticateRequest($args) {
         //Allow CLI access all the time.
-        if(php_sapi_name() == 'cli') return ['success' => true] ;
+        //if( !$this->testMode && php_sapi_name() == 'cli') return ['success' => true] ;
 
         //Pass down app verbosity for debugging.
         $options['verbosity']   = $this->verbosity;
@@ -607,6 +606,67 @@ FROM
                         9
                         );
 
+        switch ($AuthorizationRequest->getRequestType()) {
+            case 'AuthorizeAPI':
+                return $this->authenticateAPI($args,$AuthorizationRequest);
+                break;
+            
+            case 'AuthorizePageview':
+                return $this->authenticateUser($args,$AuthorizationRequest);
+                break;
+
+            default:
+                return ['success' => false];
+                break;
+        }
+    }
+
+    function authenticateAPI($args, $AuthorizationRequest) {
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "API instance detected."
+                        , 'AppEngine.log'
+                        ,9
+                        );
+
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "API Accessed: " . $args['AE']->Configs->Server->Request->uri
+                        );
+
+        //Fire the api-access-denied event if the key is not valid, and pass
+        //the $keyValid and $keyExists values in case that action wants to
+        //use them.
+
+        $authenticated = $AuthorizationRequest->authenticate();
+
+        //Run the api-access-denied event if they are not authorized.
+        if($AuthorizationRequest->authorized == false) $result = $args['AE']->runActions('api-access-denied' , ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
+        if($AuthorizationRequest->authorized == true ) $result = $args['AE']->runActions('api-access-granted', ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
+
+        return ['success' => $authenticated];
+        
+    }
+
+    function destroyUnauthorizedUserAccess($args) {
+            //Destory the cookie (if it exists) because it was not valid.
+        $domain = $args['AE']->Configs->getDomain();
+
+        $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
+                  ? $args['AE']->Configs->Server->Request->cookies['users_token']
+                  : false
+                  );
+
+        if($token) $CredentialStorage->removeCredentials($token,$domain);
+    }
+
+    function authenticateUser($args, $AuthorizationRequest) {
+
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
+                        , 'AppEngine.log'
+                        ,9
+                        );
+
+
         $users_id = $AuthorizationRequest->authenticate();
 
 
@@ -636,68 +696,34 @@ FROM
             $CredentialStorage->issueCredentials($args['AE']->Configs->getDomain());
         }
 
-        //Save the current_user in the AppEngine for later use.
-
-        //This needs to be refactored. Nested if's are to solve a problem. API doesn't need cookie authorization, and throws a ton of errors.
-        if($AuthorizationRequest->getRequestType() == 'AuthorizePageview' ) {
-            
-            $args['AE']->log( "PHPAnt Authenticator"
-                            , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
-                            , 'AppEngine.log'
-                            ,9
-                            );
-
-            if($AuthorizationRequest->authorized) {
-                $args['AE']->log( "PHPAnt Authenticator"
-                                , "User is authorized. Setting user information."
-                                , 'AppEngine.log'
-                                ,9
-                                );
-                $current_user = new Users($args['AE']->Configs->pdo);
-                $current_user->users_id = $users_id;
-                $current_user->load_me();
-
-                $return['current_user'] = $current_user;
-
-                if(!is_null($current_user)) $args['AE']->log($current_user->getFullName(),"Accessed: " . $args['AE']->Configs->Server->Request->uri);
-            } else {
-                //Destory the cookie (if it exists) because it was not valid.
-                $domain = $args['AE']->Configs->getDomain();
-
-                $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
-                          ? $args['AE']->Configs->Server->Request->cookies['users_token']
-                          : false
-                          );
-
-                if($token) $CredentialStorage->removeCredentials($token,$domain);
-            }
-        }
-
-        if($AuthorizationRequest->getRequestType() == 'AuthorizeAPI') {
-
-            $args['AE']->log( "PHPAnt Authenticator"
-                            , "API instance detected."
-                            , 'AppEngine.log'
-                            ,9
-                            );
-
-            $args['AE']->log( "PHPAnt Authenticator"
-                            , "API Accessed: " . $args['AE']->Configs->Server->Request->uri
-                            );
-
-            //Fire the api-access-denied event if the key is not valid, and pass
-            //the $keyValid and $keyExists values in case that action wants to
-            //use them.
-
-            $$args['AE']->runActions('api-access-denied', ['keyExists' => $AuthorizationRequest->keyExists, 'keyEnabled' => $AuthorizationRequest->keyEnabled]);
-            
-        }
-
+        //Destory things if they are not authorized.
         $args['AE']->log( "PHPAnt Authenticator"
                         , "Authoriztion status: " . ($AuthorizationRequest->authorized ? "Allowed" : "Denied")
                         , 'AppEngine.log'
                         ,9
                         );
+
+        if($AuthorizationRequest->authorized != true)  $this->destroyUnauthorizedUserAccess($args);
+
+
+        //User is authorized here.
+
+        $args['AE']->log( "PHPAnt Authenticator"
+                        , "User is authorized. Setting user information."
+                        , 'AppEngine.log'
+                        ,9
+                        );
+        $current_user = new Users($args['AE']->Configs->pdo);
+        $current_user->users_id = $users_id;
+        $current_user->load_me();
+
+        $return['current_user'] = $current_user;
+
+        $args['AE']->log( $current_user->getFullName()
+                        , "Accessed: " . $args['AE']->Configs->Server->Request->uri
+                        );
+
+
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
         

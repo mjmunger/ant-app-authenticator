@@ -8,7 +8,7 @@ class AuthenticationWhitelistManager
 
 	public function __construct($args) {
 		$this->Configs = $args['AE']->Configs;
-		$this->['AE']->log( "AuthenticationWhitelistManager"
+		$args['AE']->log( "AuthenticationWhitelistManager"
 						  , "Hello. I exist."
 						  );
 	}

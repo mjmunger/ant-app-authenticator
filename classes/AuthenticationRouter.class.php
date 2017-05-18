@@ -75,7 +75,7 @@ class AuthenticationRouter {
 
 		//If we are not authorized, show the denied page.
 		if(!$this->authorized) {
-			$redirect = "/login/?return=" . urlencode($this->uri)
+			$redirect = "/login/?return=" . urlencode($this->uri);
 			$this->AppEngine->log( 'AuthenticationRouter'
 			          			 , "Request not authorized. Requiring a login. Redirecting to $redirect"
 						         , 'AppEngine.log'

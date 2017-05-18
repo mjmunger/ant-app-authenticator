@@ -1,31 +1,35 @@
 <?xml version="1.0"?>
 <app name="AntAuthenticator" namespace="PHPAnt\Core">
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/.git</name>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/.git</name>
     <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/LICENSE</name>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/LICENSE</name>
     <hash>4c80553b587d05130abb4998a445245c97e2dce8</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/public.key</name>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/public.key</name>
     <hash>fc7da0f6a650d57c6940b402091dbbcd93fc67e1</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/tests</name>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/change.log</name>
+    <hash>ab0959359525e6481526cd0cf976ae15fe23eca1</hash>
+  </file>
+  <file>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/tests</name>
     <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/README.md</name>
-    <hash>ca335fccf1060b1ff8de2284dd016fd75151d28b</hash>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/README.md</name>
+    <hash>05764c1d213a05ff66a224acaa4a2dbadf3bae69</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/app.php</name>
-    <hash>914982c69d93c4c7da617fbb91eb17b3c31887b0</hash>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/app.php</name>
+    <hash>06f9f57dd33f0cabc6ecb376f7fb52981fa1c230</hash>
   </file>
   <file>
-    <name>/home/michael/php-ant/includes/apps/ant-app-authenticator/classes</name>
+    <name>/home/michael/php/php-ant/includes/apps/ant-app-authenticator/classes</name>
     <hash>da39a3ee5e6b4b0d3255bfef95601890afd80709</hash>
   </file>
   <action>
@@ -54,8 +58,8 @@
   </action>
   <action>
     <hook>auth-user</hook>
-    <function>authenticateUser</function>
+    <function>authenticateRequest</function>
     <priority>50</priority>
-    <signature>5addb331091b80a193911d39bc001610078c0ee1</signature>
+    <signature>50913c23949d31690169569f2646ffa6d1f7a197</signature>
   </action>
 </app>
