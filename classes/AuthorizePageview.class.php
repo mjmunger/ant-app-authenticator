@@ -285,7 +285,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
                   , 'users_setup'      => 'Y'
                   , 'users_active'     => 'Y'
                   , 'users_owner_id'   => 0
-                  , 'users_roles_id'   => $usersRole
+                  , 'users_roles_id'   => 2          //This role should exist by default, and should never have permissions assigned to it by default.
                   , 'users_guid'       => $guid
                   ];
 
