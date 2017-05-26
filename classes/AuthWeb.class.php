@@ -63,7 +63,7 @@ class WebAuth extends AntAuth
 
     function validAPIKey($key) {
 
-        $sql  = "SELECT api_keys_id FROM timing.api_keys WHERE api_keys_key = ? and api_keys_enabled = ?";
+        $sql  = "SELECT api_keys_id FROM api_keys WHERE api_keys_key = ? and api_keys_enabled = ?";
         $stmt = $this->pdo->prepare($sql);
         $vars = [$key,'Y'];
         $stmt->execute($vars);
