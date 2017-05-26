@@ -186,8 +186,11 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         //First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
         $groups = $adldap->user()->groups($username);
 
+        $groupList = (is_array($groups) ? implode(",", $groups) : "NONE! user should be part of at least one group that has access to this system in order to authenticate and gain access!");
+
+
         $this->AppEngine->log( "Authentication"
-                             , sprintf("This user is a member of the following groups in AD: %s", implode(",", $groups))
+                             , sprintf("This user is a member of the following groups in AD: %s", $groupList)
                              , 'AppEngine.log'
                              ,10
                              );
@@ -248,6 +251,8 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
             $update->execute([$usersRole,date('Y-m-d H:i:s'),$usersId]);
 
             $return = $row->users_id;
+            //Refresh the user's groups, and / or create them if they do not exist.
+            $this->storeUserGroups($row->users_id,$groups);
             return $return;
         }
 
@@ -280,7 +285,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
                   , 'users_setup'      => 'Y'
                   , 'users_active'     => 'Y'
                   , 'users_owner_id'   => 0
-                  , 'users_roles_id'   => $usersRole
+                  , 'users_roles_id'   => 2          //This role should exist by default, and should never have permissions assigned to it by default.
                   , 'users_guid'       => $guid
                   ];
 
@@ -291,6 +296,47 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $this->users_id = $this->pdo->lastInsertId();
         $this->users_roles_id = $usersRole;
 
+        //Refresh the user's groups, and / or create them if they do not exist.
+        $this->storeUserGroups($this->users_id,$groups);
+
         return $this->users_id;
+    }
+
+    public function storeUserGroups($users_id, $groups) {     
+
+        //Delete all groups for this user.
+        $sql = "DELETE FROM user_groups 
+                WHERE
+                    users_users_id = ?";
+
+        $stmt = $this->pdo->prepare($sql);
+        $values = [$users_id];
+        $result = $stmt->execute($values);
+
+        $this->AppEngine->log( 'AD Auth'
+                        , sprintf('Removing all groups for user %s: %s', $users_id, ($result ? "Succcess" : "Failed"))
+                        );
+
+        //Add in all the groups we have been passed for this user.
+        $this->pdo->beginTransaction();
+        $sql = "INSERT INTO `user_groups` (`users_users_id`, `user_groups_group`) VALUES (?, ?)";
+        $stmt = $this->pdo->prepare($sql);
+
+        foreach($groups as $group) {
+            //Remove quotes
+            $group = str_replace('"', '', $group);
+            $values = [$users_id, $group];
+            $result = $stmt->execute($values);
+
+            $this->AppEngine->log( 'AD Auth'
+                                 , sprintf('Adding group (%s) for user id (%s) : %s', $group, $users_id, ($result ? "Succcess" : "Failed"))
+                                 );
+        }
+
+        $success = $this->pdo->commit();
+
+        $this->AppEngine->log( 'AD Auth'
+                                 , sprintf('Groups updated / added for user id %s : ', $users_id, ($success ? "Succcess" : "Failed"))
+                                 );
     }
 }
