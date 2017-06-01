@@ -26,6 +26,10 @@ namespace PHPAnt\Core;
 
 class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppInterface  {
 
+
+    public $loginMessage = false;
+    public $messageClass = 'login-warning';
+
     /**
      * Instantiates an instance of the AntAuthenticator class.
      * Example:
@@ -744,6 +748,15 @@ FROM
                                                                               , $args['AE']                                // Need this for logging.
                                                                               );
 
+        
+        //Display a message to failed login attempts.
+        if( (  isset($AuthorizationRequest->credentials['password'])
+            || isset($AuthorizationRequest->credentials['username'])
+            )
+            && $AuthorizationRequest->authorized == false
+          ) {
+            $this->loginMessage = "Username or password incorrect.";
+        }
 
         $AuthorizationRouter->route();
 

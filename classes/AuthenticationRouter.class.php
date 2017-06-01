@@ -9,6 +9,7 @@ class AuthenticationRouter {
 	private $uri;
 	private $AuthenticationWhitelistManager;
 	private $AppEngine;
+	public  $message = false;
 
 	function __construct($authorized, $return = false, $uri, $AuthenticationWhitelistManager, $AppEngine) {
 		$this->authorized 					   = $authorized;
@@ -75,7 +76,13 @@ class AuthenticationRouter {
 
 		//If we are not authorized, show the denied page.
 		if(!$this->authorized) {
+			$message = $this->message;
 			$redirect = "/login/?return=" . urlencode($this->uri);
+			if($message) {
+				$message = urlencode($this->message);
+				$redirect = "/login/?msg=\"$message\"&return=" . urlencode($this->uri);
+			}
+
 			$this->AppEngine->log( 'AuthenticationRouter'
 			          			 , "Request not authorized. Requiring a login. Redirecting to $redirect"
 						         , 'AppEngine.log'
