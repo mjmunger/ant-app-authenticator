@@ -24,7 +24,7 @@ namespace PHPAnt\Core;
  */
 
 
-class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppInterface  {
+class AntAuthenticator extends AntApp implements AppInterface  {
 
 
     public $loginMessage = false;
@@ -78,7 +78,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
      * the CommandList class will auto-generate the CLI grammar arrays.      
      **/
 
-    private function loadCommands() {
+    public function loadCommands() {
         
 
         //Add new users.
