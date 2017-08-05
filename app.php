@@ -78,7 +78,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
      * the CommandList class will auto-generate the CLI grammar arrays.      
      **/
 
-    private function loadCommands() {
+    public function loadCommands() {
         
 
         //Add new users.

@@ -17,138 +17,90 @@
 	</table_data>
 	<table_data name="acls">
 	</table_data>
-	<table_data name="announce">
-	</table_data>
-	<table_data name="adspace">
-	</table_data>
-	<table_data name="company">
-	<row>
-		<field name="company_id">1</field>
-		<field name="company_name">test</field>
-		<field name="company_folder">test</field>
-	</row>
-	<row>
-		<field name="company_id">2</field>
-		<field name="company_name">amc</field>
-		<field name="company_folder">amc</field>
-	</row>
-	</table_data>
-	<table_data name="api_key">
-	<row>
-		<field name="api_key_id">1</field>
-		<field name="api_key_created">2016-12-23 17:32:17</field>
-		<field name="api_key_key">qswdekttnqnzgdvmxsnayxbbywrpkyfyrcbvnvnzh</field>
-		<field name="api_key_info">Test</field>
-		<field name="api_key_enabled">Y</field>
-		<field name="api_key_sandbox">Y</field>
-		<field name="api_key_public_key">vcJYpCwenR579OHOnURuwzuVvw1x98CIai5Wngo5Qbs=</field>
-		<field name="api_key_company_id">1</field>
-	</row>
-	<row>
-		<field name="api_key_id">2</field>
-		<field name="api_key_created">2017-01-10 21:07:29</field>
-		<field name="api_key_key">bgywrugpsvbgzuesbhctdxtwmykqsgatrzqftxuks</field>
-		<field name="api_key_info">amc uat</field>
-		<field name="api_key_enabled">N</field>
-		<field name="api_key_sandbox">Y</field>
-		<field name="api_key_public_key">zzjQ/1x9iK05BaY5N6RuvWmWr4t4z3XBD+xsUaaGsx8=</field>
-		<field name="api_key_company_id">2</field>
-	</row>
-	<row>
-		<field name="api_key_id">3</field>
-		<field name="api_key_created">2017-01-10 21:08:43</field>
-		<field name="api_key_key">wtsrxhsfmhmgafuysgryghqfxvzvqknkbdzznreyz</field>
-		<field name="api_key_info">amc production</field>
-		<field name="api_key_enabled">Y</field>
-		<field name="api_key_sandbox">N</field>
-		<field name="api_key_public_key">OmSOtjuTZkYYEZIMJHXQl1v1Q+MxjYrHTPoNEtsQvnM=</field>
-		<field name="api_key_company_id">2</field>
-	</row>
-	</table_data>
 	<table_data name="api_keys">
 	<row>
 		<field name="api_keys_id">9</field>
 		<field name="api_keys_key">dpzavyngfhgzbawbuhsxvbrgtshncmxgywhtuvzac</field>
 		<field name="api_keys_info">asdfasdf</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 04:20:10</field>
+		<field name="api_keys_generated">2016-02-29 09:20:10</field>
 	</row>
 	<row>
 		<field name="api_keys_id">10</field>
 		<field name="api_keys_key">tqvrvqtupfwdnmruhvngfzcerpwtxfmrwfervykhe</field>
 		<field name="api_keys_info">Test key</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 04:34:59</field>
+		<field name="api_keys_generated">2016-02-29 09:34:59</field>
 	</row>
 	<row>
 		<field name="api_keys_id">11</field>
 		<field name="api_keys_key">refehfrywbwadpcnhrhvntrtwqhsptmcyshgyyeva</field>
 		<field name="api_keys_info">asdf</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 04:59:09</field>
+		<field name="api_keys_generated">2016-02-29 09:59:09</field>
 	</row>
 	<row>
 		<field name="api_keys_id">12</field>
 		<field name="api_keys_key">bxaseqebkeuqahagfvvwtwzfqfzyqhxseygkppnxt</field>
 		<field name="api_keys_info">1234</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 05:00:48</field>
+		<field name="api_keys_generated">2016-02-29 10:00:48</field>
 	</row>
 	<row>
 		<field name="api_keys_id">13</field>
 		<field name="api_keys_key">hfzfdghfxzxvnxpdnycexynfunnntwdaccffmrpgq</field>
 		<field name="api_keys_info">1234</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 05:01:06</field>
+		<field name="api_keys_generated">2016-02-29 10:01:06</field>
 	</row>
 	<row>
 		<field name="api_keys_id">14</field>
 		<field name="api_keys_key">fctczwgwnbsgxevvdunmqtwwtxwsxxvcznfzhqvvr</field>
 		<field name="api_keys_info">asdf123</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 05:01:41</field>
+		<field name="api_keys_generated">2016-02-29 10:01:41</field>
 	</row>
 	<row>
 		<field name="api_keys_id">15</field>
 		<field name="api_keys_key">kvthubxvqwpmsucceyzctctbsnrfmtwwnqdfsaaew</field>
 		<field name="api_keys_info">asdf123</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 05:02:01</field>
+		<field name="api_keys_generated">2016-02-29 10:02:01</field>
 	</row>
 	<row>
 		<field name="api_keys_id">16</field>
 		<field name="api_keys_key">vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg</field>
 		<field name="api_keys_info">Dev</field>
 		<field name="api_keys_enabled">Y</field>
-		<field name="api_keys_generated">2016-02-29 05:02:51</field>
+		<field name="api_keys_generated">2016-02-29 10:02:51</field>
 	</row>
 	<row>
 		<field name="api_keys_id">17</field>
 		<field name="api_keys_key">zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq</field>
 		<field name="api_keys_info">Foo App</field>
 		<field name="api_keys_enabled">N</field>
-		<field name="api_keys_generated">2016-02-29 05:03:18</field>
+		<field name="api_keys_generated">2016-02-29 10:03:18</field>
 	</row>
 	<row>
 		<field name="api_keys_id">18</field>
 		<field name="api_keys_key">cgmckutavuhbdqhmkwgekqhrdxhqyadagqctgwtcq</field>
 		<field name="api_keys_info">Bar App</field>
 		<field name="api_keys_enabled">Y</field>
-		<field name="api_keys_generated">2016-02-29 05:11:01</field>
+		<field name="api_keys_generated">2016-02-29 10:11:01</field>
 	</row>
 	<row>
 		<field name="api_keys_id">19</field>
 		<field name="api_keys_key">mgsekgfttwtanbqfeqthcybsrzrxqbdzhweucmmvf</field>
 		<field name="api_keys_info">Some User</field>
 		<field name="api_keys_enabled">Y</field>
-		<field name="api_keys_generated">2016-02-29 05:14:47</field>
+		<field name="api_keys_generated">2016-02-29 10:14:47</field>
 	</row>
 	<row>
 		<field name="api_keys_id">20</field>
 		<field name="api_keys_key">gentxyezqtxuuafgkhhmrdawgmstarvgwfaueeuuy</field>
 		<field name="api_keys_info">Something else</field>
 		<field name="api_keys_enabled">Y</field>
-		<field name="api_keys_generated">2016-03-01 02:17:32</field>
+		<field name="api_keys_generated">2016-03-01 07:17:32</field>
 	</row>
 	</table_data>
 	<table_data name="users">
@@ -280,8 +232,6 @@
 	</row>
 	</table_data>
 	<table_data name="email_log">
-	</table_data>
-	<table_data name="file">
 	</table_data>
 	<table_data name="logs">
 	</table_data>
