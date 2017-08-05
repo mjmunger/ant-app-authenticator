@@ -24,7 +24,7 @@ namespace PHPAnt\Core;
  */
 
 
-class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppInterface  {
+class AntAuthenticator extends AntApp implements AppInterface  {
 
 
     public $loginMessage = false;
