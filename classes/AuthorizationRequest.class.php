@@ -2,9 +2,7 @@
 
 namespace PHPAnt\Authentication;
 
-interface iAuthorizationRequest {
-	public function getRequestType();
-}
+require_once (__DIR__ . '/iAuthorizationRequest.interface.php');
 
 class AuthorizationRequest {
 

@@ -4,6 +4,7 @@ namespace PHPAnt\Authentication;
 
 class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRequest
 {
+
     public function getRequestType() {
         return "AuthorizePageview";
     }

@@ -90,137 +90,6 @@ LOCK TABLES `acls` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `announce`
---
-
-DROP TABLE IF EXISTS `announce`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `announce` (
-  `announce_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `announce_created` datetime DEFAULT NULL,
-  `announce_api_key` varchar(41) DEFAULT NULL,
-  `announce_api_key_verified` datetime DEFAULT NULL,
-  `announce_api_key_accepted` varchar(1) DEFAULT NULL COMMENT 'Y - accepted, N - does not exist, D - disabled, NULL - not yet processed',
-  `announce_signature_verified` datetime DEFAULT NULL,
-  `announce_signature_accepted` varchar(1) DEFAULT NULL COMMENT 'Y - accepted, N - not accepted, NULL - not yet processed',
-  `announce_sandbox` varchar(1) DEFAULT NULL COMMENT 'Y - sandbox announce, otherwise - regular announce',
-  `announce_validated` datetime DEFAULT NULL,
-  `announce_status` text CHARACTER SET latin1 COMMENT 'OK - announce accepted for processing, otherwise - rejection reason',
-  `announce_processed` datetime DEFAULT NULL,
-  `announce_accepted` varchar(1) DEFAULT NULL COMMENT 'Y - accepted, N - rejected, NULL - not yet processed',
-  `announce_notified` datetime DEFAULT NULL,
-  `announce_sponsorship_id` int(11) DEFAULT NULL,
-  `announce_type` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
-  `announce_double_sided` tinyint(1) NOT NULL DEFAULT '0',
-  `announce_material` text,
-  `announce_width` decimal(5,2) unsigned DEFAULT NULL,
-  `announce_height` decimal(5,2) unsigned DEFAULT NULL,
-  `announce_bleed` tinyint(3) unsigned DEFAULT NULL,
-  `announce_dpi` smallint(6) unsigned DEFAULT NULL,
-  `announce_filetypes` text CHARACTER SET latin1,
-  `announce_callback` text CHARACTER SET latin1,
-  `announce_billing_account` int(11) DEFAULT NULL,
-  `announce_paid` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `announce_submit` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  PRIMARY KEY (`announce_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Submitted requests';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `announce`
---
-
-LOCK TABLES `announce` WRITE;
-/*!40000 ALTER TABLE `announce` DISABLE KEYS */;
-/*!40000 ALTER TABLE `announce` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `adspace`
---
-
-DROP TABLE IF EXISTS `adspace`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `adspace` (
-  `adspace_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `adspace_announce_id` bigint(20) unsigned DEFAULT NULL,
-  `adspace_adcode` varchar(255) DEFAULT NULL,
-  `adspace_name` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`adspace_id`),
-  KEY `fk_adspace_announce_idx` (`adspace_announce_id`),
-  CONSTRAINT `fk_adspace_announce` FOREIGN KEY (`adspace_announce_id`) REFERENCES `announce` (`announce_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `adspace`
---
-
-LOCK TABLES `adspace` WRITE;
-/*!40000 ALTER TABLE `adspace` DISABLE KEYS */;
-/*!40000 ALTER TABLE `adspace` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `company`
---
-
-DROP TABLE IF EXISTS `company`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `company` (
-  `company_id` int(11) NOT NULL AUTO_INCREMENT,
-  `company_name` varchar(255) DEFAULT NULL,
-  `company_folder` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`company_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `company`
---
-
-LOCK TABLES `company` WRITE;
-/*!40000 ALTER TABLE `company` DISABLE KEYS */;
-INSERT INTO `company` VALUES (1,'test','test'),(2,'amc','amc');
-/*!40000 ALTER TABLE `company` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `api_key`
---
-
-DROP TABLE IF EXISTS `api_key`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `api_key` (
-  `api_key_id` int(11) NOT NULL AUTO_INCREMENT,
-  `api_key_created` datetime DEFAULT NULL,
-  `api_key_key` varchar(41) DEFAULT NULL,
-  `api_key_info` varchar(255) DEFAULT NULL,
-  `api_key_enabled` varchar(1) DEFAULT 'Y' COMMENT 'Y to enable, N to disable',
-  `api_key_sandbox` varchar(1) DEFAULT 'N' COMMENT 'Y for sandbox key, N for regular key',
-  `api_key_public_key` varchar(44) DEFAULT NULL,
-  `api_key_company_id` int(11) NOT NULL,
-  PRIMARY KEY (`api_key_id`),
-  KEY `fk_api_key_company_idx` (`api_key_company_id`),
-  CONSTRAINT `fk_api_key_company` FOREIGN KEY (`api_key_company_id`) REFERENCES `company` (`company_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `api_key`
---
-
-LOCK TABLES `api_key` WRITE;
-/*!40000 ALTER TABLE `api_key` DISABLE KEYS */;
-INSERT INTO `api_key` VALUES (1,'2016-12-23 17:32:17','qswdekttnqnzgdvmxsnayxbbywrpkyfyrcbvnvnzh','Test','Y','Y','vcJYpCwenR579OHOnURuwzuVvw1x98CIai5Wngo5Qbs=',1),(2,'2017-01-10 21:07:29','bgywrugpsvbgzuesbhctdxtwmykqsgatrzqftxuks','amc uat','N','Y','zzjQ/1x9iK05BaY5N6RuvWmWr4t4z3XBD+xsUaaGsx8=',2),(3,'2017-01-10 21:08:43','wtsrxhsfmhmgafuysgryghqfxvzvqknkbdzznreyz','amc production','Y','N','OmSOtjuTZkYYEZIMJHXQl1v1Q+MxjYrHTPoNEtsQvnM=',2);
-/*!40000 ALTER TABLE `api_key` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `api_keys`
 --
 
@@ -232,7 +101,7 @@ CREATE TABLE `api_keys` (
   `api_keys_key` varchar(41) DEFAULT NULL,
   `api_keys_info` varchar(255) DEFAULT NULL,
   `api_keys_enabled` varchar(1) DEFAULT 'Y' COMMENT 'Y to enable, N to disable.',
-  `api_keys_generated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `api_keys_generated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`api_keys_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -243,7 +112,7 @@ CREATE TABLE `api_keys` (
 
 LOCK TABLES `api_keys` WRITE;
 /*!40000 ALTER TABLE `api_keys` DISABLE KEYS */;
-INSERT INTO `api_keys` VALUES (9,'dpzavyngfhgzbawbuhsxvbrgtshncmxgywhtuvzac','asdfasdf','N','2016-02-29 04:20:10'),(10,'tqvrvqtupfwdnmruhvngfzcerpwtxfmrwfervykhe','Test key','N','2016-02-29 04:34:59'),(11,'refehfrywbwadpcnhrhvntrtwqhsptmcyshgyyeva','asdf','N','2016-02-29 04:59:09'),(12,'bxaseqebkeuqahagfvvwtwzfqfzyqhxseygkppnxt','1234','N','2016-02-29 05:00:48'),(13,'hfzfdghfxzxvnxpdnycexynfunnntwdaccffmrpgq','1234','N','2016-02-29 05:01:06'),(14,'fctczwgwnbsgxevvdunmqtwwtxwsxxvcznfzhqvvr','asdf123','N','2016-02-29 05:01:41'),(15,'kvthubxvqwpmsucceyzctctbsnrfmtwwnqdfsaaew','asdf123','N','2016-02-29 05:02:01'),(16,'vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg','Dev','Y','2016-02-29 05:02:51'),(17,'zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq','Foo App','N','2016-02-29 05:03:18'),(18,'cgmckutavuhbdqhmkwgekqhrdxhqyadagqctgwtcq','Bar App','Y','2016-02-29 05:11:01'),(19,'mgsekgfttwtanbqfeqthcybsrzrxqbdzhweucmmvf','Some User','Y','2016-02-29 05:14:47'),(20,'gentxyezqtxuuafgkhhmrdawgmstarvgwfaueeuuy','Something else','Y','2016-03-01 02:17:32');
+INSERT INTO `api_keys` VALUES (9,'dpzavyngfhgzbawbuhsxvbrgtshncmxgywhtuvzac','asdfasdf','N','2016-02-29 09:20:10'),(10,'tqvrvqtupfwdnmruhvngfzcerpwtxfmrwfervykhe','Test key','N','2016-02-29 09:34:59'),(11,'refehfrywbwadpcnhrhvntrtwqhsptmcyshgyyeva','asdf','N','2016-02-29 09:59:09'),(12,'bxaseqebkeuqahagfvvwtwzfqfzyqhxseygkppnxt','1234','N','2016-02-29 10:00:48'),(13,'hfzfdghfxzxvnxpdnycexynfunnntwdaccffmrpgq','1234','N','2016-02-29 10:01:06'),(14,'fctczwgwnbsgxevvdunmqtwwtxwsxxvcznfzhqvvr','asdf123','N','2016-02-29 10:01:41'),(15,'kvthubxvqwpmsucceyzctctbsnrfmtwwnqdfsaaew','asdf123','N','2016-02-29 10:02:01'),(16,'vhmrrrqzpnhsyacfuaayfksrvqtsvwarenfvcvvrg','Dev','Y','2016-02-29 10:02:51'),(17,'zpfdymmfywzepfzugrzdrxvmcacddwgdkpggztpxq','Foo App','N','2016-02-29 10:03:18'),(18,'cgmckutavuhbdqhmkwgekqhrdxhqyadagqctgwtcq','Bar App','Y','2016-02-29 10:11:01'),(19,'mgsekgfttwtanbqfeqthcybsrzrxqbdzhweucmmvf','Some User','Y','2016-02-29 10:14:47'),(20,'gentxyezqtxuuafgkhhmrdawgmstarvgwfaueeuuy','Something else','Y','2016-03-01 07:17:32');
 /*!40000 ALTER TABLE `api_keys` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -319,43 +188,6 @@ CREATE TABLE `email_log` (
 LOCK TABLES `email_log` WRITE;
 /*!40000 ALTER TABLE `email_log` DISABLE KEYS */;
 /*!40000 ALTER TABLE `email_log` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `file`
---
-
-DROP TABLE IF EXISTS `file`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `file` (
-  `file_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `file_announce_id` bigint(20) unsigned DEFAULT NULL,
-  `file_validated` datetime DEFAULT NULL,
-  `file_status` text COMMENT 'check on request submission: NULL - ok, otherwise - rejection reason',
-  `file_downloaded` datetime DEFAULT NULL COMMENT 'file downloaded, hash verified successfully ',
-  `file_download_failed` datetime DEFAULT NULL COMMENT 'download file attempt number reached system''s maximum',
-  `file_download_attempts` tinyint(4) DEFAULT '0',
-  `file_preflight_performed` datetime DEFAULT NULL,
-  `file_preflight_status` text COMMENT 'NULL - preflight passed, otherwise - list of rejection reasons',
-  `file_done` datetime DEFAULT NULL,
-  `file_art_id` int(10) unsigned DEFAULT NULL,
-  `file_url` text,
-  `file_path` text,
-  `file_hash` varchar(64) DEFAULT NULL,
-  PRIMARY KEY (`file_id`),
-  KEY `fk_file_announce_idx` (`file_announce_id`),
-  CONSTRAINT `fk_file_announce` FOREIGN KEY (`file_announce_id`) REFERENCES `announce` (`announce_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='Files submitted in announcements';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `file`
---
-
-LOCK TABLES `file` WRITE;
-/*!40000 ALTER TABLE `file` DISABLE KEYS */;
-/*!40000 ALTER TABLE `file` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -447,4 +279,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-05-18 14:50:57
+-- Dump completed on 2017-08-05 16:27:07

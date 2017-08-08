@@ -3,17 +3,6 @@
 
 use PHPUnit\Framework\TestCase;
 
-$dependencies = [ 'tests/test_top.php'
-				, 'includes/apps/ant-app-authenticator/classes/AuthorizationRequest.class.php'
-				, 'includes/apps/ant-app-authenticator/classes/AuthorizeAPI.class.php'
-				, 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.class.php'
-				, 'includes/apps/ant-app-authenticator/classes/RequestFactory.class.php'
-				];
-
-foreach($dependencies as $dependency) {
-	if(file_exists($dependency)) require_once($dependency);
-}
-
 class AuthorizationRequestTest extends TestCase
 {
 
@@ -25,6 +14,23 @@ class AuthorizationRequestTest extends TestCase
 	 * @return void
 	 */
 
+	public static function setUpBeforeClass() {
+        $dependencies = [ 'tests/test_top.php'
+            , 'includes/apps/ant-app-authenticator/classes/iAuthorizationRequest.interface.php'
+            , 'includes/apps/ant-app-authenticator/classes/AuthorizationRequest.class.php'
+            , 'includes/apps/ant-app-authenticator/classes/AuthorizeAPI.class.php'
+            , 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.class.php'
+            , 'includes/apps/ant-app-authenticator/classes/RequestFactory.class.php'
+        ];
+
+        foreach($dependencies as $dependency) {
+            if(file_exists($dependency)) require_once($dependency);
+        }
+    }
+
+    /**
+     * @dataProvider providerTestURLs
+     */
 	public function testPageviewOrAPI($uri,$expectedClass, $credentials) {
 		$pdo = new PDOMock();
 
