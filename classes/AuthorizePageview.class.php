@@ -80,6 +80,10 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
         $this->log("Attempting user / pass authentication");
 
+        if(  isset($this->credentials['username']) == false
+          || isset($this->credentials['password']) == false
+          )  return false;
+
         $username = $this->credentials['username'];
         $password = $this->credentials['password'];
         $hash     = NULL;

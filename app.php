@@ -761,6 +761,7 @@ FROM
         $AuthorizationRouter->route();
 
         $return['success']      = $AuthorizationRequest->authorized;
+        $return['msg']          = $this->loginMessage;
 
         return $return;
     }
