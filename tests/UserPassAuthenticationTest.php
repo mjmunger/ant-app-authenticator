@@ -1,18 +1,23 @@
 <?php
 
-use PHPUnit\Framework;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\DbUnit\TestCaseTrait;
 
-$dependencies = [ 'tests/test_top.php'
-                ];
-
-foreach($dependencies as $d) {
-    require_once($d);
-}
-
-class UserPassAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
+class UserPassAuthenticationTest extends TestCase
 {
+    use TestCaseTrait;
     private $conn       = NULL;
     static private $pdo = NULL;
+
+    public static function setUpBeforeClass() {
+        $dependencies = [ 'tests/test_top.php'
+                        , 'includes/apps/ant-app-authenticator/classes/iAuthorizationRequest.interface.php'
+                        ];
+
+        foreach($dependencies as $d) {
+            require_once($d);
+        }
+    }
 
     public function getConnection() {
 
@@ -20,7 +25,7 @@ class UserPassAuthenticationTest extends PHPUnit_Extensions_Database_TestCase
 
         if($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = gimmiePDO(true);
+                self::$pdo = gimmiePDO();
             }
         }
 

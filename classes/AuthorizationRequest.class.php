@@ -2,6 +2,8 @@
 
 namespace PHPAnt\Authentication;
 
+require_once (__DIR__ . '/iAuthorizationRequest.interface.php');
+
 class AuthorizationRequest {
 
 	public $uri                    = NULL;
@@ -18,6 +20,7 @@ class AuthorizationRequest {
 	public $logMessages            = [];
 	public $adSettings			   = false;
 	public $authorizationType      = null;
+	public $requestType			   = false;
 
 	function __construct($options) {
 		$this->AppEngine   = isset($options['AppEngine'])   ? $options['AppEngine']   : NULL  ;
@@ -33,5 +36,4 @@ class AuthorizationRequest {
 	function log($message) {
 		array_push($this->logMessages, $message);
 	}
-	
 }

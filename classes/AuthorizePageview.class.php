@@ -2,129 +2,140 @@
 
 namespace PHPAnt\Authentication;
 
-class AuthorizePageview extends AuthorizationRequest
+class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRequest
 {
-	function enQuote($buffer) {
-		return sprintf('"%s"',$buffer);
-	}
 
-	function authenticate() {
+    public function getRequestType() {
+        return "AuthorizePageview";
+    }
 
-        $this->authorizationType = 'user';
+    function enQuote($buffer) {
+        return sprintf('"%s"',$buffer);
+    }
 
-		//Authorize with key in cookies if present
-		if(isset($this->cookies['users_token'])) return $this->authenticateKey();
+    function authenticate() {
+        //Authorize with key in cookies if present
+        if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
-		//If there is no token, try to authenticate with user / pass.
+        //If there is no token, try to authenticate with user / pass.
 
-		if(!$this->adSettings === false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+		//First, try local system users. AuthorizePageview::authenticateUserPass will return the user ID if authenticated or false otherwise.
+		$authenticated = $this->authenticateUserPass();
+		if($authenticated != false) return $authenticated;
 
-		if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
-			//If we are using AD Authentication, check AD, otherwise, check local DB.
-			if($this->adSettings && $this->adSettings['enabled'] == 1) return $this->authenticateADUserPass();
+		//If we were unable to authenticate with a local user / pass, move on to try AD if it is enabled.
 
-			//Default to user / pass authentication in our database.
-			return $this->authenticateUserPass();
+		if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+
+        if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
+
+            //If we are using AD Authentication, check AD, otherwise, check local DB.
+
+			if($this->adSettings) {
+				if((int) $adSettings['enabled'] == 1) return $this->authenticateADUserPass();
+			}
 		}
 
-		//Well, we tried.
+		//Well, we tried. Nothing worked. Deny access.
 		return false;
 	}
 
-	function authenticateKey() {
-		$this->AppEngine->log('Authentication',"Attempting key authentication");
+    function authenticateKey() {
+        $this->AppEngine->log('Authentication',"Attempting key authentication");
 
-		$sql = "SELECT
-				    users_id,users_roles_id
-				FROM
-				    user_tokens
-				WHERE
-				    user_tokens_token = ?";
+        $sql = "SELECT
+                    users_id,users_roles_id
+                FROM
+                    user_tokens
+                WHERE
+                    user_tokens_token = ?";
 
-		$stmt = $this->pdo->prepare($sql);
-		$vars = [$this->cookies['users_token']];
-		$stmt->execute($vars);
+        $stmt = $this->pdo->prepare($sql);
+        $vars = [$this->cookies['users_token']];
+        $stmt->execute($vars);
 
-		if($stmt->rowCount() === 0) {
-			$this->AppEngine->log('Authentication',"Key not found: " . $this->cookies['users_token']);
-			return false;
-		}
+        if($stmt->rowCount() === 0) {
+            $this->AppEngine->log('Authentication',"Key not found: " . $this->cookies['users_token']);
+            return false;
+        }
 
-		//Token exists. We are authorized.
-		$this->authorized = true;
+        //Token exists. We are authorized.
+        $this->authorized = true;
 
-		$row = $stmt->fetchObject();
+        $row = $stmt->fetchObject();
 
-		//We authenticated with a valid token, keep using it.
-		$this->shouldIssueCredentials = false;
+        //We authenticated with a valid token, keep using it.
+        $this->shouldIssueCredentials = false;
 
-		$this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
+        $this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
         $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
-		$logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
-		$this->AppEngine->log('Authentication',$logMessage);
+        $logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
+        $this->AppEngine->log('Authentication',$logMessage);
 
-		return $this->users_id;
-	}
+        return $this->users_id;
+    }
 
-	function authenticateUserPass() {
+    function authenticateUserPass() {
 
-		$this->log("Attempting user / pass authentication");
+        $this->log("Attempting user / pass authentication");
 
-		$username = $this->credentials['username'];
-		$password = $this->credentials['password'];
-		$hash     = NULL;
+        if(  isset($this->credentials['username']) == false
+          || isset($this->credentials['password']) == false
+          )  return false;
 
-		//First, find the user account, if it exists.
-		$sql = "SELECT
-				    users_id, users_roles_id, users_password
-				FROM
-				    users
-				WHERE
-				    users_email = ? LIMIT 1";
+        $username = $this->credentials['username'];
+        $password = $this->credentials['password'];
+        $hash     = NULL;
 
-		$stmt = $this->pdo->prepare($sql);
-		$vars = [$username];
-		$stmt->execute($vars);
+        //First, find the user account, if it exists.
+        $sql = "SELECT
+                    users_id, users_roles_id, users_password
+                FROM
+                    users
+                WHERE
+                    users_email = ? LIMIT 1";
 
-		if($stmt->rowCount() === 0) return false;
+        $stmt = $this->pdo->prepare($sql);
+        $vars = [$username];
+        $stmt->execute($vars);
 
-		$row = $stmt->fetchObject();
+        if($stmt->rowCount() === 0) return false;
 
-		$this->authorized = password_verify($password, $row->users_password);
-		$logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed for " . $username);
-		$this->AppEngine->log('Authentication',$logMessage);
+        $row = $stmt->fetchObject();
 
-		$this->shouldIssueCredentials = $this->authorized;
+        $this->authorized = password_verify($password, $row->users_password);
+        $logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed for " . $username);
+        $this->AppEngine->log('Authentication',$logMessage);
 
-		$logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-		$this->AppEngine->log('Authentication',$logMessage);
+        $this->shouldIssueCredentials = $this->authorized;
 
-		$this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
-		$this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
+        $logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
+        $this->AppEngine->log('Authentication',$logMessage);
 
-		return $this->users_id;
-	}
+        $this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
+        $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
-	function authenticateADUserPass($args) {
+        return $this->users_id;
+    }
 
-		$AE = $args['AE'];
+    function authenticateADUserPass() {
 
-		$logMessage = "Attempting authentication against active directory";
-		$args['AE']->log('Authentication',$logMessage);
+        $logMessage = "Attempting authentication against active directory";
+        $this->AppEngine->log('Authentication',$logMessage);
 
-		// 0. For convenience:
-		$username = $this->credentials['username'];
-		$password = $this->credentials['password'];
-		$hash     = NULL;
+        // 0. For convenience:
+        $username = $this->credentials['username'];
+        $password = $this->credentials['password'];
+        $hash     = NULL;
 
-		$data     = json_decode( $args['AE']->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
-		$settings = $data !== null ? $data : [];
-		$settings['domain_controllers'] = [$settings['domain_controllers']];
+        $data     = json_decode( $this->AppEngine->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
+        $settings = $data !== null ? $data : [];
+        $settings['domain_controllers'] = [$settings['domain_controllers']];
 
-		// 1. Attempt to authenticate against AD
-		$adldap = new \Adldap\Adldap($settings);
-		$this->authorized = $adldap->user()->authenticate($username, $password);
+        // 1. Attempt to authenticate against AD
+        $adldap = new \Adldap\Adldap($settings);
+        $this->authorized = $adldap->user()->authenticate($username, $password);
 
         if(!$this->authorized) return false;
 
@@ -136,143 +147,201 @@ class AuthorizePageview extends AuthorizationRequest
         $last  = $user['sn'];
         $guid  = bin2hex($user['objectguid']);
 
-		$args['AE']->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
+        $this->AppEngine->log("Authentication", "User GUID: " . $guid);
 
-		$logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
-		$args['AE']->log('Authentication',$logMessage);
-		$this->shouldIssueCredentials = $this->authorized;
-		$logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-		$args['AE']->log('Authentication',$logMessage);
+        $this->AppEngine->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
 
-		// 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
+        $logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
+        $this->AppEngine->log('Authentication',$logMessage);
+        $this->shouldIssueCredentials = $this->authorized;
+        $logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
+        $this->AppEngine->log('Authentication',$logMessage);
 
-		$sql = "SELECT users_id,users_roles_id FROM users where users_guid = ?";
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
-		$values = [$guid];
-		$result = $stmt->execute($values);
+        // 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
 
-		$AE->log( 'Authentication'
-		        , sprintf('User exists in the local database: %s',($stmt->rowCount() > 0 ? "Yes" : "No"))
-						, 'AppEngine.log'
-						, 9
-					  );
+        $sql = "SELECT users_id,users_roles_id FROM users where users_guid = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $values = [$guid];
+        $result = $stmt->execute($values);
 
-		if($stmt->rowCount() > 0) {
-			//return that user's id.
-			$row = $stmt->fetchObject();
-			$AE->log( 'Authentication'
-			        , sprintf('Returning database user ID: %s',  $row->users_id)
-							, 'AppEngine.log'
-							, 9
-						  );
+        $this->AppEngine->log( 'Authentication'
+                , sprintf('User exists in the local database: %s',($stmt->rowCount() > 0 ? "Yes" : "No"))
+                        , 'AppEngine.log'
+                        , 9
+                      );
+
+        if($stmt->rowCount() > 0) {
+            //return that user's id.
+            $row = $stmt->fetchObject();
+            $this->AppEngine->log( 'Authentication'
+                    , sprintf('Returning database user ID: %s',  $row->users_id)
+                            , 'AppEngine.log'
+                            , 9
+                          );
             //Set the userId and User Role of this object so that other things don't fail.
             $this->users_id       = $row->users_id;
 
             //Check the roles to make sure they still have access, or to see if the access should be updated.
 
             $this->users_roles_id = $row->users_roles_id;
-		}
+        } else {
+            $this->AppEngine->log("Authentication", "GUID did not return any user accounts for the user $username, which authenticated properly. This might be a problem... if the account was changed or the GUID for the user changed, you'll need to update it in the database (here) locally.");
+        }
 
-		//First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
+        //First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
+        $groups = $adldap->user()->groups($username);
 
-		$groups = $adldap->user()->groups($username);
+        $groupList = (is_array($groups) ? implode(",", $groups) : "NONE! user should be part of at least one group that has access to this system in order to authenticate and gain access!");
 
-		//Put quotes around all the groups.
-		$groups = array_map([$this,'enQuote'], $groups);
 
-		//Create an "IN" clause string
-		$inClause = implode(', ', $groups);
+        $this->AppEngine->log( "Authentication"
+                             , sprintf("This user is a member of the following groups in AD: %s", $groupList)
+                             , 'AppEngine.log'
+                             ,10
+                             );
 
-		$AE->log( 'Authentication'
-						, sprintf('User belongs to the following AD groups: %s',  $inClause)
-						, 'AppEngine.log'
-						, 9
-						);
+        //Put quotes around all the groups.
+        $groups = array_map([$this,'enQuote'], $groups);
 
-		$sql = sprintf("SELECT * FROM users_roles where users_roles_title IN ( %s )",$inClause);
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
-		$stmt->execute();
+        //Create an "IN" clause string
+        $inClause = implode(', ', $groups);
 
-		$AE->log( 'Authentication'
-						, sprintf('Number of AD groups for this user that have roles in the system: %s',  $stmt->rowCount())
-						, 'AppEngine.log'
-						, 9
-						);
+        $this->AppEngine->log( 'Authentication'
+                        , sprintf('User belongs to the following AD groups: %s',  $inClause)
+                        , 'AppEngine.log'
+                        , 9
+                        );
+
+        $sql = sprintf("SELECT * FROM users_roles where users_roles_title IN ( %s )",$inClause);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+
+        $this->AppEngine->log( 'Authentication'
+                        , sprintf('Number of AD groups for this user that have roles in the system: %s',  $stmt->rowCount())
+                        , 'AppEngine.log'
+                        , 9
+                        );
 
          //User does not belong to any groups that have access to the system.
-		if($stmt->rowCount() == 0) {
+        if($stmt->rowCount() == 0) {
             //Destroy any hope of getting credentials.
             $this->authorized             = false;
             $this->shouldIssueCredentials = false;
             unset($this->users_id);
             unset($this->users_role_id);
+            $this->AppEngine->log( 'Authentication'
+                            , sprintf('User %s does not belong to any roles that are installed on the local system. They are only members of: %s',  $username,$inClause)
+                            );
             return false;
         }
 
-		//OK, good. The user belongs to a group that has permissions on this system. Now, let's see if the user exists, and if not, create it.
-		$row = $stmt->fetchObject();
-		$usersRole = $row->users_roles_id;
+        //OK, good. The user belongs to a group that has permissions on this system. Now, let's see if the user exists, and if not, create it.
+        $row = $stmt->fetchObject();
+        $usersRole = $row->users_roles_id;
 
-		// Get the users information
-		$sql = "SELECT * FROM users where users_guid = ?";
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
-		$values = [$guid];
-		$result = $stmt->execute($values);
+        // Get the users information
+        $sql = "SELECT * FROM users where users_guid = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $values = [$guid];
+        $result = $stmt->execute($values);
 
-		//If there is a match, update that user's role and return the use ID.
-		if($stmt->rowCount() > 0) {
-			$row = $stmt->fetchObject();
-			$usersId = $row->users_id;
+        //If there is a match, update that user's role and return the use ID.
+        if($stmt->rowCount() > 0) {
+            $row = $stmt->fetchObject();
+            $usersId = $row->users_id;
 
-			//Update the role.
-			$sql    = "UPDATE users SET users_roles_id = ?, users_last_login = ? WHERE users_id = ?";
-			$update = $args['AE']->Configs->pdo->prepare($sql);
-			$update->execute([$usersRole,date('Y-m-d H:i:s'),$usersId]);
+            //Update the role.
+            $sql    = "UPDATE users SET users_roles_id = ?, users_last_login = ? WHERE users_id = ?";
+            $update = $this->pdo->prepare($sql);
+            $update->execute([$usersRole,date('Y-m-d H:i:s'),$usersId]);
 
-			$return = $row->users_id;
-			return $return;
-		}
+            $return = $row->users_id;
+            //Refresh the user's groups, and / or create them if they do not exist.
+            $this->storeUserGroups($row->users_id,$groups);
+            return $return;
+        }
 
-		//If we have made it here, the user doesn't exist. We'll have to create it. Since the password and other info is in AD, we really only need to add in the first, last, email, and role.
+        //If we have made it here, the user doesn't exist. We'll have to create it. Since the password and other info is in AD, we really only need to add in the first, last, email, and role.
 
-		$sql = "INSERT INTO `users`
-			   ( `users_email`
-			   , `users_first`
-			   , `users_last`
-			   , `users_setup`
-			   , `users_active`
-			   , `users_owner_id`
-			   , `users_roles_id`
-			   , `users_guid`
-			   )
-			   VALUES
-			   ( :users_email
-			   , :users_first
-			   , :users_last
-			   , :users_setup
-			   , :users_active
-			   , :users_owner_id
-			   , :users_roles_id
-			   , :users_guid
-			   )";
+        $sql = "INSERT INTO `users`
+               ( `users_email`
+               , `users_first`
+               , `users_last`
+               , `users_setup`
+               , `users_active`
+               , `users_owner_id`
+               , `users_roles_id`
+               , `users_guid`
+               )
+               VALUES
+               ( :users_email
+               , :users_first
+               , :users_last
+               , :users_setup
+               , :users_active
+               , :users_owner_id
+               , :users_roles_id
+               , :users_guid
+               )";
 
-		$values = [ 'users_email'      => $email
-				  , 'users_first'      => $first
-				  , 'users_last'       => $last
-				  , 'users_setup'      => 'Y'
-				  , 'users_active'     => 'Y'
-				  , 'users_owner_id'   => 0
-				  , 'users_roles_id'   => $usersRole
-				  , 'users_guid'       => $guid
-				  ];
+        $values = [ 'users_email'      => $email
+                  , 'users_first'      => $first
+                  , 'users_last'       => $last
+                  , 'users_setup'      => 'Y'
+                  , 'users_active'     => 'Y'
+                  , 'users_owner_id'   => 0
+                  , 'users_roles_id'   => 2          //This role should exist by default, and should never have permissions assigned to it by default.
+                  , 'users_guid'       => $guid
+                  ];
 
 
-		$stmt = $args['AE']->Configs->pdo->prepare($sql);
-		$result = $stmt->execute($values);
+        $stmt = $this->pdo->prepare($sql);
+        $result = $stmt->execute($values);
 
-		$this->users_id = $args['AE']->Configs->pdo->lastInsertId();
+        $this->users_id = $this->pdo->lastInsertId();
         $this->users_roles_id = $usersRole;
 
-		return $this->users_id;
-	}
+        //Refresh the user's groups, and / or create them if they do not exist.
+        $this->storeUserGroups($this->users_id,$groups);
+
+        return $this->users_id;
+    }
+
+    public function storeUserGroups($users_id, $groups) {     
+
+        //Delete all groups for this user.
+        $sql = "DELETE FROM user_groups 
+                WHERE
+                    users_users_id = ?";
+
+        $stmt = $this->pdo->prepare($sql);
+        $values = [$users_id];
+        $result = $stmt->execute($values);
+
+        $this->AppEngine->log( 'AD Auth'
+                        , sprintf('Removing all groups for user %s: %s', $users_id, ($result ? "Succcess" : "Failed"))
+                        );
+
+        //Add in all the groups we have been passed for this user.
+        $this->pdo->beginTransaction();
+        $sql = "INSERT INTO `user_groups` (`users_users_id`, `user_groups_group`) VALUES (?, ?)";
+        $stmt = $this->pdo->prepare($sql);
+
+        foreach($groups as $group) {
+            //Remove quotes
+            $group = str_replace('"', '', $group);
+            $values = [$users_id, $group];
+            $result = $stmt->execute($values);
+
+            $this->AppEngine->log( 'AD Auth'
+                                 , sprintf('Adding group (%s) for user id (%s) : %s', $group, $users_id, ($result ? "Succcess" : "Failed"))
+                                 );
+        }
+
+        $success = $this->pdo->commit();
+
+        $this->AppEngine->log( 'AD Auth'
+                                 , sprintf('Groups updated / added for user id %s : ', $users_id, ($success ? "Succcess" : "Failed"))
+                                 );
+    }
 }
