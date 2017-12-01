@@ -12,7 +12,9 @@ class AuthorizeAPI extends AuthorizationRequest
 	 * @author Michael Munger <michael@highpoweredhelp.com>
 	 **/
 	function authenticate() {
-		
+
+	    $this->authorizationType = 'api';
+
 		$sql = "SELECT 
 				    api_keys_id
 				FROM

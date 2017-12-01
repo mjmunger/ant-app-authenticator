@@ -17,6 +17,7 @@ class AuthorizationRequest {
 	public $verbosity              = 0;
 	public $logMessages            = [];
 	public $adSettings			   = false;
+	public $authorizationType      = null;
 
 	function __construct($options) {
 		$this->AppEngine   = isset($options['AppEngine'])   ? $options['AppEngine']   : NULL  ;

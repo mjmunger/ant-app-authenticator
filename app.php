@@ -298,6 +298,7 @@ class AntAuthenticator extends \PHPAnt\Core\AntApp implements \PHPAnt\Core\AppIn
         $AuthorizationRouter->route();
 
         $return['success']      = $AuthorizationRequest->authorized;
+        $return['auth-type']    = $AuthorizationRequest->authorizationType;
 
         return $return;
     }
