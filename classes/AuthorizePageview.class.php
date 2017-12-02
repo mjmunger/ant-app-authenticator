@@ -14,6 +14,8 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
     }
 
     function authenticate() {
+        $this->authorizationType = 'user';
+        
         //Authorize with key in cookies if present
         if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
