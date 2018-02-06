@@ -568,7 +568,7 @@ FROM
 
     function authenticateRequest($args) {
         //Allow CLI access all the time.
-        //if( !$this->testMode && php_sapi_name() == 'cli') return ['success' => true] ;
+        if( !$this->testMode && php_sapi_name() == 'cli') return ['success' => true] ;
 
         //Pass down app verbosity for debugging.
         $options['verbosity']   = $this->verbosity;
