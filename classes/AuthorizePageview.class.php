@@ -15,7 +15,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
     function authenticate() {
         $this->authorizationType = 'user';
-        
+
         //Authorize with key in cookies if present
         if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
@@ -27,7 +27,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
 		//If we were unable to authenticate with a local user / pass, move on to try AD if it is enabled.
 
-		if($this->adSettings != false) $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+		if($this->adSettings != 'false') $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
 
         if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
 
