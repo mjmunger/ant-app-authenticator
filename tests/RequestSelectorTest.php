@@ -2,6 +2,15 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use \PDO;
+
+class PDOMock extends PDO
+{
+    public function __construct()
+    {
+        //override mock!
+    }
+}
 
 class AuthorizationRequestTest extends TestCase
 {

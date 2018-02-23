@@ -14,36 +14,29 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
     }
 
     function authenticate() {
+
+        if($this->authenticateKey())        return true;
+
+        //No key? if we are missing something, fail it.
+        if(isset($this->credentials['username']) == false) return false;
+        if(isset($this->credentials['password']) == false) return false;
+
         $this->authorizationType = 'user';
 
         //Authorize with key in cookies if present
-        if(isset($this->cookies['users_token'])) return $this->authenticateKey();
 
-        //If there is no token, try to authenticate with user / pass.
+        if($this->authenticateUserPass())   return true;
+        if($this->authenticateADUserPass()) return true;
 
-		//First, try local system users. AuthorizePageview::authenticateUserPass will return the user ID if authenticated or false otherwise.
-		$authenticated = $this->authenticateUserPass();
-		if($authenticated != false) return $authenticated;
-
-		//If we were unable to authenticate with a local user / pass, move on to try AD if it is enabled.
-
-		if($this->adSettings != 'false') $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
-
-        if(isset($this->credentials['username']) && isset($this->credentials['password'])) {
-
-            //If we are using AD Authentication, check AD, otherwise, check local DB.
-
-			if($this->adSettings) {
-				if((int) $adSettings['enabled'] == 1) return $this->authenticateADUserPass();
-			}
-		}
-
-		//Well, we tried. Nothing worked. Deny access.
-		return false;
+        //Well, we tried. Nothing worked. Deny access.
+        return false;
 	}
 
     function authenticateKey() {
-        $this->AppEngine->log('Authentication',"Attempting key authentication");
+        //If not token, fail.
+        if(isset($this->cookies['users_token']) == false) return false;
+
+        $this->logger->info('Authentication' . ' ' . "Attempting key authentication");
 
         $sql = "SELECT
                     users_id,users_roles_id
@@ -57,7 +50,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $stmt->execute($vars);
 
         if($stmt->rowCount() === 0) {
-            $this->AppEngine->log('Authentication',"Key not found: " . $this->cookies['users_token']);
+            $this->logger->info('Authentication' . ' ' . "Key not found: " . $this->cookies['users_token']);
             return false;
         }
 
@@ -73,23 +66,12 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
 
         $logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
-        $this->AppEngine->log('Authentication',$logMessage);
+        $this->logger->info('Authentication'. ' ' .$logMessage);
 
         return $this->users_id;
     }
 
-    function authenticateUserPass() {
-
-        $this->log("Attempting user / pass authentication");
-
-        if(  isset($this->credentials['username']) == false
-          || isset($this->credentials['password']) == false
-          )  return false;
-
-        $username = $this->credentials['username'];
-        $password = $this->credentials['password'];
-        $hash     = NULL;
-
+    function getUser($username) {
         //First, find the user account, if it exists.
         $sql = "SELECT
                     users_id, users_roles_id, users_password
@@ -104,34 +86,60 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
         if($stmt->rowCount() === 0) return false;
 
-        $row = $stmt->fetchObject();
+        return $stmt->fetchObject();
+    }
 
-        $this->authorized = password_verify($password, $row->users_password);
+    function authenticateUserPass() {
+
+        $this->log("Attempting user / pass authentication");
+
+        if(isset($this->credentials['username']) == false) return false;
+        if(isset($this->credentials['password']) == false) return false;
+
+        $username = $this->credentials['username'];
+        $password = $this->credentials['password'];
+        $hash     = NULL;
+
+        $user = $this->getUser($username);
+
+        if($user == false) return false; //No user. fail.
+
+        $this->authorized = password_verify($password, $user->users_password);
+
         $logMessage = ($this->authorized ? "Password authentication successful" : "Password authentication failed for " . $username);
-        $this->AppEngine->log('Authentication',$logMessage);
+
+        $this->logger->info('Authentication' . ' ' . $logMessage);
 
         $this->shouldIssueCredentials = $this->authorized;
 
         $logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-        $this->AppEngine->log('Authentication',$logMessage);
 
-        $this->users_id       = ($this->authorized ? (int) $row->users_id       : false);
-        $this->users_roles_id = ($this->authorized ? (int) $row->users_roles_id : false);
+        $this->logger->info('Authentication' . ' ' . $logMessage);
+
+        $this->users_id       = ($this->authorized ? (int) $user->users_id       : false);
+        $this->users_roles_id = ($this->authorized ? (int) $user->users_roles_id : false);
 
         return $this->users_id;
     }
 
     function authenticateADUserPass() {
 
+        if($this->adSettings == false) return false;
+
+        $adSettings = (count($this->adSettings) > 0 ? json_decode($this->adSettings, true) : false );
+
+        //Quit if AD not enabled.
+        if((int) $adSettings['enabled'] != 1) return false;
+
         $logMessage = "Attempting authentication against active directory";
-        $this->AppEngine->log('Authentication',$logMessage);
+        $this->logger->info('Authentication' . ' ' . $logMessage);
 
         // 0. For convenience:
         $username = $this->credentials['username'];
         $password = $this->credentials['password'];
         $hash     = NULL;
 
-        $data     = json_decode( $this->AppEngine->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
+        $data     = json_decode( $this->logger->Configs->getConfigs( [ 'ad-settings' ] )['ad-settings'], true );
         $settings = $data !== null ? $data : [];
         $settings['domain_controllers'] = [$settings['domain_controllers']];
 
@@ -149,15 +157,15 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $last  = $user['sn'];
         $guid  = bin2hex($user['objectguid']);
 
-        $this->AppEngine->log("Authentication", "User GUID: " . $guid);
+        $this->logger->info("Authentication", "User GUID: " . $guid);
 
-        $this->AppEngine->log('Authentication',sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
+        $this->logger->info('Authentication' . ' ' . sprintf('Active directory authentication returned: %s',($this->authorized ? "Authorized" : "Failed")));
 
         $logMessage = ($this->authorized ? "AD authentication successful" : "AD authentication failed");
-        $this->AppEngine->log('Authentication',$logMessage);
+        $this->logger->info('Authentication' . ' ' . $logMessage);
         $this->shouldIssueCredentials = $this->authorized;
         $logMessage = ($this->shouldIssueCredentials  ? "Key credentials will be issued." : "Key credentials will not be issued.");
-        $this->AppEngine->log('Authentication',$logMessage);
+        $this->logger->info('Authentication' . ' ' . $logMessage);
 
         // 2. If successful, check to see if the user exists in the DB. (We'll create a user on the fly).
 
@@ -166,7 +174,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $values = [$guid];
         $result = $stmt->execute($values);
 
-        $this->AppEngine->log( 'Authentication'
+        $this->logger->info( 'Authentication'
                 , sprintf('User exists in the local database: %s',($stmt->rowCount() > 0 ? "Yes" : "No"))
                         , 'AppEngine.log'
                         , 9
@@ -175,7 +183,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         if($stmt->rowCount() > 0) {
             //return that user's id.
             $row = $stmt->fetchObject();
-            $this->AppEngine->log( 'Authentication'
+            $this->logger->info( 'Authentication'
                     , sprintf('Returning database user ID: %s',  $row->users_id)
                             , 'AppEngine.log'
                             , 9
@@ -187,7 +195,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
             $this->users_roles_id = $row->users_roles_id;
         } else {
-            $this->AppEngine->log("Authentication", "GUID did not return any user accounts for the user $username, which authenticated properly. This might be a problem... if the account was changed or the GUID for the user changed, you'll need to update it in the database (here) locally.");
+            $this->logger->info("Authentication", "GUID did not return any user accounts for the user $username, which authenticated properly. This might be a problem... if the account was changed or the GUID for the user changed, you'll need to update it in the database (here) locally.");
         }
 
         //First, we have to determine if this user belongs to any groups or not. if they do not belong to any groups in this system, they are denied login access.
@@ -196,7 +204,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $groupList = (is_array($groups) ? implode(",", $groups) : "NONE! user should be part of at least one group that has access to this system in order to authenticate and gain access!");
 
 
-        $this->AppEngine->log( "Authentication"
+        $this->logger->info( "Authentication"
                              , sprintf("This user is a member of the following groups in AD: %s", $groupList)
                              , 'AppEngine.log'
                              ,10
@@ -208,7 +216,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         //Create an "IN" clause string
         $inClause = implode(', ', $groups);
 
-        $this->AppEngine->log( 'Authentication'
+        $this->logger->info( 'Authentication'
                         , sprintf('User belongs to the following AD groups: %s',  $inClause)
                         , 'AppEngine.log'
                         , 9
@@ -218,7 +226,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
 
-        $this->AppEngine->log( 'Authentication'
+        $this->logger->info( 'Authentication'
                         , sprintf('Number of AD groups for this user that have roles in the system: %s',  $stmt->rowCount())
                         , 'AppEngine.log'
                         , 9
@@ -231,7 +239,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
             $this->shouldIssueCredentials = false;
             unset($this->users_id);
             unset($this->users_role_id);
-            $this->AppEngine->log( 'Authentication'
+            $this->logger->info( 'Authentication'
                             , sprintf('User %s does not belong to any roles that are installed on the local system. They are only members of: %s',  $username,$inClause)
                             );
             return false;
@@ -320,7 +328,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $values = [$users_id];
         $result = $stmt->execute($values);
 
-        $this->AppEngine->log( 'AD Auth'
+        $this->logger->info( 'AD Auth'
                         , sprintf('Removing all groups for user %s: %s', $users_id, ($result ? "Succcess" : "Failed"))
                         );
 
@@ -335,14 +343,14 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
             $values = [$users_id, $group];
             $result = $stmt->execute($values);
 
-            $this->AppEngine->log( 'AD Auth'
+            $this->logger->info( 'AD Auth'
                                  , sprintf('Adding group (%s) for user id (%s) : %s', $group, $users_id, ($result ? "Succcess" : "Failed"))
                                  );
         }
 
         $success = $this->pdo->commit();
 
-        $this->AppEngine->log( 'AD Auth'
+        $this->logger->info( 'AD Auth'
                                  , sprintf('Groups updated / added for user id %s : ', $users_id, ($success ? "Succcess" : "Failed"))
                                  );
     }

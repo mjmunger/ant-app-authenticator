@@ -20,49 +20,71 @@ class AuthenticationRouter {
 
 	}
 
+	function requireLogin($query) {
+	    $param = http_build_query($query);
+        $redirect = "/login/?" . $param;
+
+        $this->AppEngine->log( 'AuthenticationRouter'
+            , "Request not authorized. Requiring a login. Redirecting to $redirect"
+            , 'AppEngine.log'
+            , 9
+        );
+
+        header("location: " . $redirect);
+        return false;
+    }
+
 	function route() {
 
+        $allowedURIs = [];
+        $allowedURIs[] = '/login/';
+        $allowedURIs[] = '/logout/';
 
-		if($this->authorized) {
 
-		$this->AppEngine->log( 'AuthenticationRouter'
-							 , "Routing authorized request"
-							 , 'AppEngine.log'
-							 , 9
-							 );
+	    $query = [];
+	    $query[ 'return' ] = ($this->return  == false ? "/" : $this->return  );
+        $query[ 'message'] = ($this->message == false ? ""  : $this->message );
 
-			//Special case allowing us to logout.
-			if($this->uri == '/logout/') {
-				$this->AppEngine->log( 'AuthenticationRouter'
-				          			 , "Aborting route for /logout/ (hardcoded abort)"
-							         , 'AppEngine.log'
-							         , 9
-				          			 );
-				return true;
-			}
+        //If we are not authorized, show the login page.
+        if($this->authorized == false) return $this->requireLogin($query);
 
-			//We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
-			if(!$this->return && $this->uri == '/login/') {
-				$this->AppEngine->log( 'AuthenticationRouter'
-				          			 , "Aborting redirect to /login/ in favor of a redirect to / (hardcoded abort to avoid loops)"
-							         , 'AppEngine.log'
-							         , 9
-				          			 );
-				$this->return = '/';
-			}
+        $this->AppEngine->log( 'AuthenticationRouter'
+                             , "Routing authorized request"
+                             , 'AppEngine.log'
+                             , 9
+                             );
 
-			//If we have a return set in the get request:
-			if($this->return) {
-				$this->AppEngine->log( 'AuthenticationRouter'
-				          			 , "return was set in GET. Redirecting to: " . $this->return
-							         , 'AppEngine.log'
-							         , 9
-				          			 );
-				//header("HTTP/1.1 302 Moved Temporarily");
-				header("location: " . $this->return);
-			}
-			return true;
-		}
+        //Special case allowing us to logout.
+        if($this->uri == '/logout/') {
+            $this->AppEngine->log( 'AuthenticationRouter'
+                                 , "Aborting route for /logout/ (hardcoded abort)"
+                                 , 'AppEngine.log'
+                                 , 9
+                                 );
+            return true;
+        }
+
+        //We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
+        if(!$this->return && $this->uri == '/login/') {
+            $this->AppEngine->log( 'AuthenticationRouter'
+                                 , "Aborting redirect to /login/ in favor of a redirect to / (hardcoded abort to avoid loops)"
+                                 , 'AppEngine.log'
+                                 , 9
+                                 );
+            $this->return = '/';
+        }
+
+        //If we have a return set in the get request:
+        if($this->return) {
+            $this->AppEngine->log( 'AuthenticationRouter'
+                                 , "return was set in GET. Redirecting to: " . $this->return
+                                 , 'AppEngine.log'
+                                 , 9
+                                 );
+            //header("HTTP/1.1 302 Moved Temporarily");
+            header("location: " . $this->return);
+        }
+        return true;
 
         //If this URI is whitelisted, authentication is not necessary. Bug out now to prevent 301 redirection loops.
         if($this->AuthenticationWhitelistManager->isWhitelisted($this->uri)) {
@@ -74,22 +96,7 @@ class AuthenticationRouter {
             return ['success' => true];
         }
 
-		//If we are not authorized, show the denied page.
-		if(!$this->authorized) {
-			$message = $this->message;
-			$redirect = "/login/?return=" . urlencode($this->uri);
-			if($message) {
-				$message = urlencode($this->message);
-				$redirect = "/login/?msg=\"$message\"&return=" . urlencode($this->uri);
-			}
 
-			$this->AppEngine->log( 'AuthenticationRouter'
-			          			 , "Request not authorized. Requiring a login. Redirecting to $redirect"
-						         , 'AppEngine.log'
-						         , 9
-			          			 );
-			header("location: " . $redirect);
-		}
 
 		//Otherwise, let it ride!
 	}

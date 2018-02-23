@@ -1,14 +1,11 @@
 <?php
+$dbDatabase = 'mfd';
+$dbHost     = '127.0.0.1';
+$dbUsername = "root";
+$dbPassword = 'mJqIVW0ArnJyw9AN';
 
-$deps = [ '../../../mysql-credentials.php'
-		];
 
-
-foreach($deps as $d) {
-	include($d);
-}
-
-$dsn = "mysql:dbname=$dbDatabase;host=$dbHost";
+$dsn = "mysql:dbname=$dbDatabase;host=$dbHost;port=33306";
 try {
     $pdo = new PDO($dsn, $dbUsername, $dbPassword);
 } catch (PDOException $e) {

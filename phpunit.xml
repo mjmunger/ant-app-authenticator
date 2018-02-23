@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/6.0/phpunit.xsd"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         cacheTokens="false"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         extensionsDirectory="tools/phpunit.d/"
+         forceCoversAnnotation="false"
+         mapTestClassNameToCoveredClassName="false"
+         processIsolation="false"
+         stopOnError="false"
+         stopOnFailure="false"
+         stopOnIncomplete="false"
+         stopOnSkipped="false"
+         stopOnRisky="false"
+         timeoutForSmallTests="1"
+         timeoutForMediumTests="10"
+         timeoutForLargeTests="60"
+         verbose="true"
+         bootstrap="vendor/autoload.php">
+
+    <testsuite name="Authenticator">
+        <directory suffix="Test.php">tests/</directory>
+    </testsuite>
+
+     <php>
+        <var name="DB_DSN" value="mysql:port=33306;host=127.0.0.1;dbname=phpant" />
+        <var name="DB_USER" value="phpant" />
+        <var name="DB_PASSWD" value="password" />
+        <var name="DB_DBNAME" value="phpant" />
+     </php>
+
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">.</directory>
+        </whitelist>
+    </filter>
+</phpunit>

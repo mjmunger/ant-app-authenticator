@@ -10,12 +10,12 @@ class UsersAndRolesTest extends TestCase
     static private $pdo = NULL;
 
     public static function setUpBeforeClass() {
-        $dependencies = [ 'tests/test_top.php'
-                        , 'includes/apps/ant-app-authenticator/classes/iAuthorizationRequest.interface.php'
+        $dependencies = [ 'classes/iAuthorizationRequest.interface.php'
                         ];
 
         foreach($dependencies as $d) {
-            require_once($d);
+            $target = dirname(__DIR__) . '/' . $d;
+            require_once($target);
         }
     }
     public function getConnection() {
@@ -24,7 +24,7 @@ class UsersAndRolesTest extends TestCase
 
         if($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = gimmiePDO();
+                self::$pdo = new PDO( $GLOBALS['DB_DSN'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD'] );
             }
         }
 

@@ -2,6 +2,9 @@
 
 namespace PHPAnt\Core;
 
+use PHPAnt\Authentication\CredentialStorage;
+use PHPAnt\Authentication\AuthenticationRouter;
+
 /**
  * App Name: PHPAnt Authenticator
  * App Description: Handles basic authentication for PHP-Ant apps.
@@ -321,6 +324,7 @@ FROM
     private function getNewPassword() {
         //Seed this value.
         $confirm = "!";
+        $pass    = null;
 
         while(strcmp($pass, $confirm) !== 0) {            
 
@@ -654,19 +658,52 @@ FROM
         
     }
 
-    function destroyUnauthorizedUserAccess($args, $CredentialStorage) {
+    function destroyUnauthorizedUserAccess($Engine, $CredentialStorage) {
             //Destory the cookie (if it exists) because it was not valid.
-        $domain = $args['AE']->Configs->getDomain();
+        $domain = $Engine->Configs->getDomain();
 
-        $token  = ( isset($args['AE']->Configs->Server->Request->cookies['users_token'])
-                  ? $args['AE']->Configs->Server->Request->cookies['users_token']
+        $token  = ( isset($Engine->Configs->Server->Request->cookies['users_token'])
+                  ? $Engine->Configs->Server->Request->cookies['users_token']
                   : false
                   );
 
         if($token) $CredentialStorage->removeCredentials($token,$domain);
     }
 
+    function accessDenied($Engine, $AuthorizationRequest, $CredentialStorage) {
+
+        //Destory things if they are not authorized.
+        $Engine->log( "PHPAnt Authenticator"
+            , "Authoriztion status: " . ($AuthorizationRequest->authorized ? "Allowed" : "Denied")
+            , 'AppEngine.log'
+            ,9
+        );
+
+        $this->destroyUnauthorizedUserAccess($Engine, $CredentialStorage);
+
+        $return['success']      = $AuthorizationRequest->authorized;
+        $return['auth-type']    = $AuthorizationRequest->authorizationType;
+        $return['msg']          = $this->loginMessage;
+
+        return $return;
+    }
+
+    function issueCredentials($Engine, $CredentialStorage ) {
+        //we are going to either create a cookie or kill one. Either way, we need this.
+
+        //Store the credentials for the session or for a while.
+        $CredentialStorage->setRememberMe(isset($Engine->Configs->Server->Request->post_vars['remember']));
+        $configs = $Engine->Configs->getConfigs(['credentials-valid-for']);
+
+        $expiry = (count($configs) > 0 ? $configs['credentials-valid-for'] : 1800 );
+
+        $CredentialStorage->setExpiry($expiry);
+        $CredentialStorage->issueCredentials($Engine->Configs->getDomain());
+    }
+
     function authenticateUser($args, $options, $AuthorizationRequest) {
+
+        $Engine = $args['AE'];
 
         $args['AE']->log( "PHPAnt Authenticator"
                         , "AuthorizePageview instance detected. If authorized, we'll set the users ID and load the user object."
@@ -675,8 +712,13 @@ FROM
                         );
 
 
-        $users_id = $AuthorizationRequest->authenticate();
+        $AuthorizationRequest->authenticate();
 
+
+        $CredentialStorage = new CredentialStorage( $Engine->getPDO()
+            , $AuthorizationRequest->users_id
+            , $AuthorizationRequest->users_roles_id
+        );
 
         //Record log messages from the AuthorizationRequest object if verbosity is high enough.
         if($args['AE']->verbosity > 9) {
@@ -685,44 +727,18 @@ FROM
           }
         }
 
-        //we are going to either create a cookie or kill one. Either way, we need this.
-        $CredentialStorage = new \PHPAnt\Authentication\CredentialStorage($args['AE']->Configs->pdo
-                                                                         ,$users_id
-                                                                         ,$AuthorizationRequest->users_roles_id
-                                                                         );
+        if($AuthorizationRequest->authorized == false) return $this->accessDenied($Engine, $AuthorizationRequest, $CredentialStorage);
 
-        //Is we are authorized (by user / pass) and should issue an authorization token (cookie), then...
-        if($AuthorizationRequest->authorized && $AuthorizationRequest->shouldIssueCredentials) {
-
-            //Store the credentials for the session or for a while.
-            $CredentialStorage->setRememberMe(isset($args['AE']->Configs->Server->Request->post_vars['remember']));
-            $configs = $args['AE']->Configs->getConfigs(['credentials-valid-for']);
-
-            $expiry = (count($configs) > 0 ? $configs['credentials-valid-for'] : 1800 );
-
-            $CredentialStorage->setExpiry($expiry);
-            $CredentialStorage->issueCredentials($args['AE']->Configs->getDomain());
-        }
-
-        //Destory things if they are not authorized.
-        $args['AE']->log( "PHPAnt Authenticator"
-                        , "Authoriztion status: " . ($AuthorizationRequest->authorized ? "Allowed" : "Denied")
-                        , 'AppEngine.log'
-                        ,9
-                        );
-
-        if($AuthorizationRequest->authorized != true)  $this->destroyUnauthorizedUserAccess($args, $CredentialStorage);
-
-
-        //User is authorized here.
+        $this->issueCredentials($Engine, $CredentialStorage );
 
         $args['AE']->log( "PHPAnt Authenticator"
                         , "User is authorized. Setting user information."
                         , 'AppEngine.log'
                         ,9
                         );
-        $current_user = new Users($args['AE']->Configs->pdo);
-        $current_user->users_id = $users_id;
+
+        $current_user           = new Users($args['AE']->Configs->pdo);
+        $current_user->users_id = $AuthorizationRequest->users_id;
         $current_user->load_me();
 
         $return['current_user'] = $current_user;
@@ -730,8 +746,6 @@ FROM
         $args['AE']->log( $current_user->getFullName()
                         , "Accessed: " . $args['AE']->Configs->Server->Request->uri
                         );
-
-
 
         $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
         
@@ -741,22 +755,16 @@ FROM
                         ,9
                         );
 
-        $AuthorizationRouter = new \PHPAnt\Authentication\AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
-                                                                              , $options['return']                         // If a return url is specified, submit that.
-                                                                              , $args['AE']->Configs->Server->Request->uri // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
-                                                                              , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
-                                                                              , $args['AE']                                // Need this for logging.
-                                                                              );
+        $AuthorizationRouter = new AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
+                                                       , $options['return']                         // If a return url is specified, submit that.
+                                                       , $Engine->Configs->Server->Request->uri     // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
+                                                       , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
+                                                       , $Engine                                    // Need this for logging.
+                                                       );
 
         
         //Display a message to failed login attempts.
-        if( (  isset($AuthorizationRequest->credentials['password'])
-            || isset($AuthorizationRequest->credentials['username'])
-            )
-            && $AuthorizationRequest->authorized == false
-          ) {
-            $this->loginMessage = "Username or password incorrect.";
-        }
+        $this->loginMessage = ($AuthorizationRequest->authorized == false ? "Username or password incorrect." : false);
 
         $AuthorizationRouter->route();
 

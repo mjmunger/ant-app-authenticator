@@ -11,15 +11,13 @@ function generateToken() {
 	$token = hash_hmac('sha256',$seed, 'Eevohnie0oN2aht');
 	return $token;
 }
+$dbDatabase = 'mfd';
+$dbHost     = '127.0.0.1';
+$dbUsername = "root";
+$dbPassword = 'mJqIVW0ArnJyw9AN';
 
-$deps = [ '../../../mysql-credentials.php'
-		];
 
-foreach($deps as $d) {
-	include($d);
-}
-
-$dsn = "mysql:dbname=$dbDatabase;host=$dbHost";
+$dsn = "mysql:dbname=$dbDatabase;host=$dbHost;port=33306";
 try {
     $pdo = new PDO($dsn, $dbUsername, $dbPassword);
 } catch (PDOException $e) {
@@ -30,7 +28,7 @@ try {
     print PHP_EOL;
 }
 
-$sql = "INSERT INTO `phpant`.`user_tokens` (`user_tokens_token`, `user_tokens_expiry`, `users_id`) VALUES (?, ?, ?)";
+$sql = "INSERT INTO `phpant`.`user_tokens` (`user_tokens_token`, `user_tokens_expiry`, `users_id`, users_roles_id) VALUES (?, ?, ?, 1)";
 
 $pdo->beginTransaction();
 $stmt = $pdo->prepare($sql);
@@ -42,6 +40,7 @@ for($x = 1; $x <=6; $x++) {
 	        , $x
 	        ];
 	$stmt->execute($vars);
+	var_dump($stmt->errorInfo());
 }
 
 //six more that expire in 10 days

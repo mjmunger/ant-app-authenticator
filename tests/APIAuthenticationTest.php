@@ -10,25 +10,24 @@ class APIAuthenticationTest extends TestCase
     static private $pdo = NULL;
 
     public static function setUpBeforeClass() {
-        $dependencies = [ 'tests/test_top.php'
-            , 'includes/apps/ant-app-authenticator/classes/iAuthorizationRequest.interface.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthBfwBase.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthorizationRequest.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthorizePageview.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthCLI.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthenticationWhitelistManager.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/RequestFactory.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthenticationRouter.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthEnvFactory.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthorizeAPI.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/CredentialStorage.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthMobile.class.php'
-            , 'includes/apps/ant-app-authenticator/classes/AuthWeb.class.php'
-            , 'includes/apps/ant-app-authenticator/app.php'
+        $dependencies = [ 'classes/iAuthorizationRequest.interface.php'
+            , 'classes/AuthBfwBase.class.php'
+            , 'classes/AuthorizationRequest.class.php'
+            , 'classes/AuthorizePageview.class.php'
+            , 'classes/AuthCLI.class.php'
+            , 'classes/AuthenticationWhitelistManager.class.php'
+            , 'classes/RequestFactory.class.php'
+            , 'classes/AuthenticationRouter.class.php'
+            , 'classes/AuthEnvFactory.class.php'
+            , 'classes/AuthorizeAPI.class.php'
+            , 'classes/CredentialStorage.class.php'
+            , 'classes/AuthMobile.class.php'
+            , 'classes/AuthWeb.class.php'
         ];
 
         foreach($dependencies as $d) {
-            require_once($d);
+            $target = dirname(__DIR__) . '/' . $d;
+            require_once($target);
         }
     }
 
@@ -38,7 +37,7 @@ class APIAuthenticationTest extends TestCase
 
         if($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = gimmiePDO();
+                self::$pdo = new PDO( $GLOBALS['DB_DSN'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD'] );
             }
         }
 
