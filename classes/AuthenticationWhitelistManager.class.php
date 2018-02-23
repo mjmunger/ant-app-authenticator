@@ -6,14 +6,11 @@ class AuthenticationWhitelistManager
 {
 	var $Configs = NULL;
 
-	public function __construct($args) {
+	public function __construct($Configs) {
 	    $this->add("/login/");
 	    $this->add("/logout/");
 
-		$this->Configs = $args['AE']->Configs;
-		$args['AE']->log( "AuthenticationWhitelistManager"
-						  , "Hello. I exist."
-						  );
+		$this->Configs = Configs;
 	}
 
 	private function getList() {

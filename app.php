@@ -750,7 +750,7 @@ FROM
                         , "Accessed: " . $args['AE']->Configs->Server->Request->uri
                         );
 
-        $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args);
+        $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args['AE']->Configs);
         
         $args['AE']->log( "PHPAnt Authenticator"
                         , "Created whitelist manager"
