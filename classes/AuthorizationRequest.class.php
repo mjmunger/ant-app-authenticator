@@ -26,14 +26,14 @@ class AuthorizationRequest {
 	public $logger                 = false;
 
 	function __construct($options) {
-		$this->pdo         = isset($options['pdo'])         ? $options['pdo']         : NULL  ;
-		$this->uri         = isset($options['uri'])         ? $options['uri']         : NULL  ;
-		$this->credentials = isset($options['credentials']) ? $options['credentials'] : NULL  ;
-		$this->returnURL   = isset($options['return'])      ? $options['return']      : NULL  ;
-		$this->cookies     = isset($options['cookies'])     ? $options['cookies']     : NULL  ;
-		$this->verbosity   = isset($options['verbosity'])   ? $options['verbosity']   : 0     ;
-		$this->adSettings  = isset($options['ad-settings']) ? $options['ad-settings'] : false ;
-		$this->logPath     = isset($options['log-path'])    ? $options['log-path']    : __DIR__ . '/' . "auth.log" ;
+		$this->pdo         = isset($options['pdo'])         ? $options['pdo']                   : NULL  ;
+		$this->uri         = isset($options['uri'])         ? $options['uri']                   : NULL  ;
+		$this->credentials = isset($options['credentials']) ? $options['credentials']           : NULL  ;
+		$this->returnURL   = isset($options['return'])      ? $options['return']                : NULL  ;
+		$this->cookies     = isset($options['cookies'])     ? $options['cookies']               : NULL  ;
+		$this->verbosity   = isset($options['verbosity'])   ? $options['verbosity']             : 0     ;
+		$this->adSettings  = isset($options['ad-settings']) ? $options['ad-settings']           : false ;
+		$this->logPath     = isset($options['log-path'])    ? $options['log-path'] . "auth.log" : __DIR__ . '/' . "auth.log" ;
 
 		// create a log channel
         $log = new Logger('Authenticator');
