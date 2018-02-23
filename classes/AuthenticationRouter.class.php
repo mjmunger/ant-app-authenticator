@@ -21,8 +21,8 @@ class AuthenticationRouter {
 	}
 
 	function requireLogin($query) {
-	    $param = http_build_query($query);
-        $redirect = "/login/?" . $param;
+	    $params = http_build_query($query);
+        $redirect = "/login/?" . $params;
 
         $this->AppEngine->log( 'AuthenticationRouter'
             , "Request not authorized. Requiring a login. Redirecting to $redirect"
@@ -36,10 +36,15 @@ class AuthenticationRouter {
 
 	function route() {
 
-        $allowedURIs = [];
-        $allowedURIs[] = '/login/';
-        $allowedURIs[] = '/logout/';
-
+        //If this URI is whitelisted, authentication is not necessary. Bug out now to prevent 301 redirection loops.
+        if($this->AuthenticationWhitelistManager->isWhitelisted($this->uri)) {
+            $this->AppEngine->log( 'AuthenticationRouter'
+                , "The uri ($this->uri) is whitelisted. Not routing anywhere. Let it ride!"
+                , 'AppEngine.log'
+                , 9
+            );
+            return ['success' => true];
+        }
 
 	    $query = [];
 	    $query[ 'return' ] = ($this->return  == false ? "/" : $this->return  );
@@ -54,16 +59,6 @@ class AuthenticationRouter {
                              , 9
                              );
 
-        //Special case allowing us to logout.
-        if($this->uri == '/logout/') {
-            $this->AppEngine->log( 'AuthenticationRouter'
-                                 , "Aborting route for /logout/ (hardcoded abort)"
-                                 , 'AppEngine.log'
-                                 , 9
-                                 );
-            return true;
-        }
-
         //We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
         if(!$this->return && $this->uri == '/login/') {
             $this->AppEngine->log( 'AuthenticationRouter'
@@ -75,7 +70,7 @@ class AuthenticationRouter {
         }
 
         //If we have a return set in the get request:
-        if($this->return) {
+        if( $this->return) {
             $this->AppEngine->log( 'AuthenticationRouter'
                                  , "return was set in GET. Redirecting to: " . $this->return
                                  , 'AppEngine.log'
@@ -85,19 +80,5 @@ class AuthenticationRouter {
             header("location: " . $this->return);
         }
         return true;
-
-        //If this URI is whitelisted, authentication is not necessary. Bug out now to prevent 301 redirection loops.
-        if($this->AuthenticationWhitelistManager->isWhitelisted($this->uri)) {
-			$this->AppEngine->log( 'AuthenticationRouter'
-			          			 , "The uri ($this->uri) is whitelisted. Not routing anywhere. Let it ride!"
-						         , 'AppEngine.log'
-						         , 9
-			          			 );
-            return ['success' => true];
-        }
-
-
-
-		//Otherwise, let it ride!
 	}
 }

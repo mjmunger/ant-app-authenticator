@@ -7,6 +7,9 @@ class AuthenticationWhitelistManager
 	var $Configs = NULL;
 
 	public function __construct($args) {
+	    $this->add("/login/");
+	    $this->add("/logout/");
+
 		$this->Configs = $args['AE']->Configs;
 		$args['AE']->log( "AuthenticationWhitelistManager"
 						  , "Hello. I exist."
