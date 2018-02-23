@@ -69,6 +69,8 @@ class AuthenticationRouter {
             $this->return = '/';
         }
 
+        if($this->return = "//") $this->return = "/";
+
         //If we have a return set in the get request:
         if( $this->return) {
             $this->AppEngine->log( 'AuthenticationRouter'
