@@ -584,10 +584,13 @@ FROM
         $options['get']         = $args['AE']->Configs->Server->Request->get_vars;
         $options['post']        = $args['AE']->Configs->Server->Request->post_vars;
         $options['cookies']     = $args['AE']->Configs->Server->Request->cookies;
+        $options['log-path']    = $this->appPath . '/logs/';
         $options['ad-settings'] = ( isset($args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings'])
                                   ? $args['AE']->Configs->getConfigs(['ad-settings'])['ad-settings']
                                   : false
                                   ) ;
+
+        mkdir($options['log-path'],0644,true);
 
         //Default the return to the main page...
         $options['return']      = false;
