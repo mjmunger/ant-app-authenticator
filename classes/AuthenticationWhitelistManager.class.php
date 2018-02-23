@@ -7,8 +7,8 @@ class AuthenticationWhitelistManager
 	var $Configs = NULL;
 
 	public function __construct($Configs) {
-		$this->Configs = Configs;
-		
+		$this->Configs = $Configs;
+
 	    $this->add("/login/");
 	    $this->add("/logout/");
 
