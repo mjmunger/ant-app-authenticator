@@ -15,7 +15,8 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
     function authenticate() {
 
-        if($this->authenticateKey())        return true;
+        $this->logger->info("Attempting key authentication...");
+        if($this->authenticateKey())        return ['success' => true];
 
         //No key? if we are missing something, fail it.
         if(isset($this->credentials['username']) == false) return false;
@@ -25,9 +26,12 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
 
         //Authorize with key in cookies if present
 
-        if($this->authenticateUserPass())   return true;
-        if($this->authenticateADUserPass()) return true;
+        $this->logger->info("Attempting local authentication...");
+        if($this->authenticateUserPass())   return ['success' => true];
+        $this->logger->info("Attempting AD authentication...");
+        if($this->authenticateADUserPass()) return ['success' => true];
 
+        $this->logger->info("Nothing worked. Denying access.");
         //Well, we tried. Nothing worked. Deny access.
         return false;
 	}
@@ -35,8 +39,6 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
     function authenticateKey() {
         //If not token, fail.
         if(isset($this->cookies['users_token']) == false) return false;
-
-        $this->logger->info('Authentication' . ' ' . "Attempting key authentication");
 
         $sql = "SELECT
                     users_id,users_roles_id
@@ -68,7 +70,7 @@ class AuthorizePageview extends AuthorizationRequest implements iAuthorizationRe
         $logMessage = ($this->users_id ? "Key authentication successful" : "Key authentication failed");
         $this->logger->info('Authentication'. ' ' .$logMessage);
 
-        return $this->users_id;
+        return true;
     }
 
     function getUser($username) {

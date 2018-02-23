@@ -590,7 +590,7 @@ FROM
                                   : false
                                   ) ;
 
-        mkdir($options['log-path'],0755,true);
+        if(is_dir($options['log-path']) == false ) mkdir($options['log-path'],0755,true);
 
         //Default the return to the main page...
         $options['return']      = false;
@@ -772,6 +772,8 @@ FROM
                         ,9
                         );
 
+        if($options['return'] == $args['AE']->Configs->Server->Request->uri) $options['return'] = false;
+
         $AuthorizationRouter = new AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
                                                        , $options['return']                         // If a return url is specified, submit that.
                                                        , $Engine->Configs->Server->Request->uri     // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
@@ -779,7 +781,7 @@ FROM
                                                        , $Engine                                    // Need this for logging.
                                                        );
 
-        
+
         //Display a message to failed login attempts.
         $this->loginMessage = ($AuthorizationRequest->authorized == false ? "Username or password incorrect." : false);
 
