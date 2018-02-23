@@ -673,7 +673,7 @@ FROM
         if($token) $CredentialStorage->removeCredentials($token,$domain);
     }
 
-    function accessDenied($Engine, $AuthorizationRequest, $CredentialStorage) {
+    function accessDenied($Engine, $AuthorizationRequest, $AuthenticationWhitelistManager, $CredentialStorage) {
 
         //Destory things if they are not authorized.
         $Engine->log( "PHPAnt Authenticator"
@@ -687,6 +687,19 @@ FROM
         $return['success']      = $AuthorizationRequest->authorized;
         $return['auth-type']    = $AuthorizationRequest->authorizationType;
         $return['msg']          = $this->loginMessage;
+
+        $AuthorizationRouter = new AuthenticationRouter( $AuthorizationRequest->authorized          // Submit the state of authorization.
+            , $AuthorizationRequest->returnURL                         // If a return url is specified, submit that.
+            , $Engine->Configs->Server->Request->uri     // Give the full URI so we can compare it to the whitelist of non-authenticated urls.
+            , $AuthenticationWhitelistManager            // Allows us to handle whitelisted URIs.
+            , $Engine                                    // Need this for logging.
+        );
+
+
+        //Display a message to failed login attempts.
+        $this->loginMessage = ($AuthorizationRequest->authorized == false ? "Username or password incorrect." : false);
+
+        $AuthorizationRouter->route();
 
         return $return;
     }
@@ -730,7 +743,9 @@ FROM
           }
         }
 
-        if($AuthorizationRequest->authorized == false) return $this->accessDenied($Engine, $AuthorizationRequest, $CredentialStorage);
+        $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args['AE']->Configs);
+
+        if($AuthorizationRequest->authorized == false) return $this->accessDenied($Engine, $AuthorizationRequest, $AuthenticationWhitelistManager, $CredentialStorage);
 
         $this->issueCredentials($Engine, $CredentialStorage );
 
@@ -750,8 +765,7 @@ FROM
                         , "Accessed: " . $args['AE']->Configs->Server->Request->uri
                         );
 
-        $AuthenticationWhitelistManager = new AuthenticationWhitelistManager($args['AE']->Configs);
-        
+
         $args['AE']->log( "PHPAnt Authenticator"
                         , "Created whitelist manager"
                         , 'AppEngine.log'
