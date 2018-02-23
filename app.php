@@ -590,7 +590,7 @@ FROM
                                   : false
                                   ) ;
 
-        mkdir($options['log-path'],0644,true);
+        mkdir($options['log-path'],0755,true);
 
         //Default the return to the main page...
         $options['return']      = false;
