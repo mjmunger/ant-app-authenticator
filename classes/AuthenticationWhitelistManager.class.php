@@ -9,8 +9,8 @@ class AuthenticationWhitelistManager
 	public function __construct($Configs) {
 		$this->Configs = $Configs;
 
-	    $this->add("/login/.*");
-	    $this->add("/logout/.*");
+	    $this->add('%/login/.*%s');
+	    $this->add('%/logout/.*%s');
 
 	}
 
@@ -25,11 +25,15 @@ class AuthenticationWhitelistManager
 
 		if(is_null($list)) $list = [];
 
+		if(in_array($regex,$list)) return false;
+
 		//Add to it.
 		array_push($list, $regex);
 
 		//Save it.
 		$this->save($list);
+
+		return true;
 
 	}
 
@@ -75,7 +79,6 @@ class AuthenticationWhitelistManager
 
 	public function isWhitelisted($uri) {
 		$list = $this->getList();
-
 		foreach($list as $regex) {
 			if(preg_match($regex, $uri)) return true;
 		}

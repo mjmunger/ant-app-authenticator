@@ -36,7 +36,7 @@ class AuthenticationRouter {
 
     function disallowReturnToLogin() {
         //We should never be at /login/ after we are authorized. So, if that's where we are, set $this->return to "/" to get us out of here
-        $pattern = "\/login\/.*";
+        $pattern = "'%/login/.*%s'";
         $matches = [];
 
         preg_match($pattern,$this->uri, $matches);
